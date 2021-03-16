@@ -1,4 +1,5 @@
 # Get pheno data
+
 library(tidyverse)
 library(corrplot)
 library(RColorBrewer)
@@ -11,6 +12,7 @@ source("calculatePhenoCamUncertainty.R")
 siteIDs <- c("NEON.D01.HARV.DP1.00033","NEON.D01.BART.DP1.00033","NEON.D02.SCBI.DP1.00033",
              "NEON.D05.STEI.DP1.00033","NEON.D06.UKFS.DP1.00033","NEON.D07.GRSM.DP1.00033",
              "NEON.D08.DELA.DP1.00033","NEON.D11.CLBJ.DP1.00033")
+
 
 site_names <- c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
 
