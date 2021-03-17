@@ -5,6 +5,9 @@ library(corrplot)
 library(RColorBrewer)
 rm(list=ls())
 
+# Claire's WD
+setwd("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/")
+
 source("R/NEON/downloadPhenoCam.R")
 source("R/NEON/calculatePhenoCamUncertainty.R")
 
@@ -21,8 +24,8 @@ message(paste0("Downloading and generating phenology targets ", Sys.time()))
 allData <- data.frame(matrix(nrow = 0, ncol = 5))
 
 for(i in 1:length(siteIDs)){
-  # Create a subdirectory for site
-  dir.create(paste0("data/",site_names[i]))
+  # Create a subdirectory for site if doesn't already exist
+  if(!dir.exists(paste0("data/",site_names[i]))) dir.create(paste0("data/",site_names[i]))
   
   # Print site name
   siteName <- siteIDs[i]
@@ -39,13 +42,13 @@ for(i in 1:length(siteIDs)){
   
   # Get data aggregated by day and write to site subdirectory
   phenoData <- download.phenocam(URL = URL_gcc90)
-  write.csv(phenoData,paste0("data/",site_names[i],"/",site_names[i],"_daily.csv"))
+  write_csv(phenoData,paste0("data/",site_names[i],"/",site_names[i],"_daily.csv"))
   
   dates <- unique(phenoData$date)
   
   # Get unaggregated data and write to site subdirectory
   phenoData_individual <- download.phenocam(URL=URL_individual,skipNum = 17)
-  write.csv(phenoData,paste0("data/",site_names[i],"/",site_names[i],"_individual.csv"))
+  write_csv(phenoData,paste0("data/",site_names[i],"/",site_names[i],"_individual.csv"))
   
   # Calculate gcc SD
   gcc_sd <- calculate.phenocam.uncertainty(dat=phenoData_individual,dates=dates) ##Calculates standard deviations on daily gcc90 values
@@ -56,7 +59,7 @@ for(i in 1:length(siteIDs)){
            time = date) %>% 
     select(time, siteID, gcc_90)
   subPhenoData <- cbind(subPhenoData,gcc_sd)
-  write.csv(phenoData,paste0("data/",site_names[i],"/",site_names[i],"_gccTargets.csv"))
+  write_csv(subPhenoData,paste0("data/",site_names[i],"/",site_names[i],"_gccTargets.csv"))
   
   allData <- rbind(allData,subPhenoData)
   
