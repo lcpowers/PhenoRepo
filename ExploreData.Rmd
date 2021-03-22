@@ -1,0 +1,55 @@
+---
+title: "ExploreData"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library(tidyverse)
+library(corrplot)
+library(ggfortify)
+```
+
+```{r data}
+site <- "GRSM"
+ind_data <- read_csv(paste0("./data/",site,"/",site,"_individual.csv"))
+daily_data <- read_csv(paste0("./data/",site,"/",site,"_daily.csv"))
+gcc_data <- read_csv(paste0("./data/",site,"/",site,"_gccTargets.csv"))
+
+```
+
+# Inidividual data
+```{r explore_ind}
+names(ind_data)
+
+ggplot(ind_data,aes(x=date)) +
+  geom_point(aes(y=r_mean),color="darkred",alpha=0.5)+
+  geom_point(aes(y=g_mean),color="darkgreen",alpha=0.5)+
+  geom_point(aes(y=b_mean),color='darkblue',alpha=0.5)+
+  theme_classic()
+
+ggplot(ind_data,aes(x=date))+
+  geom_point(aes(y=rcc_90),color="darkred",alpha=0.5)+
+  geom_point(aes(y=gcc_90),color="darkgreen",alpha=0.5)+
+  theme_classic()
+
+ggplot(ind_data,aes(x=gcc_90,y=max_solar_elev))+
+  geom_point(aes(color=doy),alpha=0.5)+
+  geom_smooth(method='lm')+
+  theme_classic()
+
+summary(lm(gcc_90~max_solar_elev+doy,data = ind_data))
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
