@@ -12,12 +12,13 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 library(tidyverse)
 library(corrplot)
 library(ggfortify)
+library(reshape2)
 ```
 
 
--[Essential paper to read](https://www.nature.com/articles/sdata201828)
+-[Essential paper to read](https://www.nature.com/articles/sdata201828)   
 -[Very useful paper about phenocams and chromatic coordinates](https://www.sciencedirect.com/science/article/pii/S2530064417300019)  
--[raw image data if interested](https://data.neonscience.org/data-products/DP1.00033.001)
+-[raw image data if interested](https://data.neonscience.org/data-products/DP1.00033.001)   
 -[metadata url](https://daac.ornl.gov/VEGETATION/guides/PhenoCam_V2.html)
 
 ```{r data, message=FALSE}
@@ -33,9 +34,38 @@ daily_data <- read_csv(paste0("data/",site,"/",site,"_daily.csv")) %>%
   filter(image_count>0)
 gcc_data <- read_csv(paste0("data/",site,"/",site,"_gccTargets.csv"))
 
+gcol <- 'springgreen4'
+rcol <- 'sienna3'
+bcol <- 'dodgerblue3'
+
 ```
 
-**Data data -- Looking at time series plots of data for photos aggregated by day**.  
+**Individual data -- looking at time series plots of data for individual photos
+```{r ind_data}
+#names(ind_data)
+
+ind_data_melt <- melt(ind_data,id.vars = 'date',measure.vars = c('g_mean',"r_mean","b_mean"))
+
+ggplot(ind_data_melt,aes(x=date,y=value))+
+  geom_point(aes(color=variable),alpha=0.5)+
+  facet_wrap(~variable)+
+  scale_color_manual(values=c(gcol,rcol,bcol))+
+  theme_bw()
+```
+
+```{r ind_data2}
+# names(ind_data)
+ind_data_melt2 <- melt(ind_data,id.vars = 'solar_elev',measure.vars = c('gcc',"rcc"))
+
+ggplot(ind_data_melt2,aes(x=solar_elev,y=value))+
+  geom_point(aes(color=variable))+
+  geom_smooth(method='lm')+
+  facet_wrap(~variable)+
+  scale_color_manual(values=c(gcol,rcol))+
+  theme_bw()
+```
+
+**Daily data -- Looking at time series plots of data for photos aggregated by day**.  
 This is a plot of r mean, g mean, and b mean across time     
  -'Mean' explanation: "the mean value (for all images passing the selection criteria) of the mean (by image) red channel DN over the ROI"   
   - DN = digital number   
@@ -60,27 +90,34 @@ ggplot(daily_data,aes(x=date)) +
 
 
 ```{r explore_ind2}
-ggplot(ind_data,aes(x=date))+
-  geom_point(aes(y=rcc_90),color="darkred",alpha=0.5)+
-  geom_point(aes(y=gcc_90),color="darkgreen",alpha=0.5)+
+ggplot(daily_data,aes(x=date))+
+  geom_point(aes(y=rcc_90),color=rcol,alpha=0.5)+
+  geom_point(aes(y=gcc_90),color=gcol,alpha=0.5)+
   theme_classic()
 ```
 
 ```{r explore_ind3}
-ggplot(ind_data,aes(x=gcc_90,y=max_solar_elev))+
+ggplot(daily_data,aes(x=gcc_90,y=max_solar_elev))+
   geom_point(aes(color=doy),alpha=0.5)+
   geom_smooth(method='lm')+
   theme_classic()
 
-summary(lm(gcc_90~max_solar_elev+doy,data = ind_data))
+summary(lm(gcc_90~max_solar_elev+doy,data = daily_data))
 
 ```
 
-```{r}
 
+Correlation plots
+```{r corrplots}
+names(daily_data)
+corr_df <- daily_data %>% 
+  select(1,2,6:27)
+summary(corr_df)
+
+corrplot(cor(corr_df[,2:ncol(corr_df)]))
 ```
 
-```{r}
+- Strong negative correlations between green variables and red variables   
+- Strong positive correlation with max_solar_elev and green variables   
 
-```
 
