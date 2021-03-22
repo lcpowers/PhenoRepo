@@ -5,8 +5,8 @@ library(corrplot)
 library(RColorBrewer)
 rm(list=ls())
 
-# Claire's WD
-setwd("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/")
+# Claire's laptop WD
+# setwd("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/")
 
 source("R/NEON/downloadPhenoCam.R")
 source("R/NEON/calculatePhenoCamUncertainty.R")
@@ -48,7 +48,7 @@ for(i in 1:length(siteIDs)){
   
   # Get unaggregated data and write to site subdirectory
   phenoData_individual <- download.phenocam(URL=URL_individual,skipNum = 17)
-  write_csv(phenoData,paste0("data/",site_names[i],"/",site_names[i],"_individual.csv"))
+  write_csv(phenoData_individual,paste0("data/",site_names[i],"/",site_names[i],"_individual.csv"))
   
   # Calculate gcc SD
   gcc_sd <- calculate.phenocam.uncertainty(dat=phenoData_individual,dates=dates) ##Calculates standard deviations on daily gcc90 values

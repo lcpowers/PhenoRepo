@@ -1,41 +1,72 @@
 ---
-title: "ExploreData"
+title: "Explore Data"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,root.dir="/home/claire/Git/PhenoRepo/")
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-```{r packages}
+```{r packages, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(corrplot)
 library(ggfortify)
 ```
 
-```{r data}
+
+-[Essential paper to read](https://www.nature.com/articles/sdata201828)
+-[Very useful paper about phenocams and chromatic coordinates](https://www.sciencedirect.com/science/article/pii/S2530064417300019)  
+-[raw image data if interested](https://data.neonscience.org/data-products/DP1.00033.001)
+-[metadata url](https://daac.ornl.gov/VEGETATION/guides/PhenoCam_V2.html)
+
+```{r data, message=FALSE}
+rm(list=ls())
+
+# Claire's Rserver WD
+setwd("/home/claire/Git/PhenoRepo/")
+
 site <- "GRSM"
-ind_data <- read_csv(paste0("./data/",site,"/",site,"_individual.csv"))
-daily_data <- read_csv(paste0("./data/",site,"/",site,"_daily.csv"))
-gcc_data <- read_csv(paste0("./data/",site,"/",site,"_gccTargets.csv"))
+# Individual data is not individual data right now!!! Need to fix asap
+ind_data <- read_csv(paste0("data/",site,"/",site,"_individual.csv"))
+daily_data <- read_csv(paste0("data/",site,"/",site,"_daily.csv")) %>% 
+  filter(image_count>0)
+gcc_data <- read_csv(paste0("data/",site,"/",site,"_gccTargets.csv"))
 
 ```
 
-# Inidividual data
-```{r explore_ind}
-names(ind_data)
+**Data data -- Looking at time series plots of data for photos aggregated by day**.  
+This is a plot of r mean, g mean, and b mean across time     
+ -'Mean' explanation: "the mean value (for all images passing the selection criteria) of the mean (by image) red channel DN over the ROI"   
+  - DN = digital number   
+  - "Thus, each pixel in the image is associated with a digital number (“DN”) triplet, with each element in the triplet corresponding to the intensity of one of the colour layers. Therefore, the second step in the image analysis was to read in the images, and associated mask sequence, and to characterize the frequency distribution of the RGB DN triplets within the ROI. We did this separately for each ROI at each site, to produce the “all-image” data files contained in Data Record 3 (see below)."
 
-ggplot(ind_data,aes(x=date)) +
+```{r explore_ind1}
+# names(ind_data)
+
+ggplot(daily_data,aes(x=date)) +
   geom_point(aes(y=r_mean),color="darkred",alpha=0.5)+
   geom_point(aes(y=g_mean),color="darkgreen",alpha=0.5)+
   geom_point(aes(y=b_mean),color='darkblue',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2017-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2018-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2019-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2020-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2021-01-01'),color='grey50',alpha=0.5)+
   theme_classic()
+```
 
+- Looks like red peaks around November -- severe drop off right as green peaks, which makes sense. 
+
+
+```{r explore_ind2}
 ggplot(ind_data,aes(x=date))+
   geom_point(aes(y=rcc_90),color="darkred",alpha=0.5)+
   geom_point(aes(y=gcc_90),color="darkgreen",alpha=0.5)+
   theme_classic()
+```
 
+```{r explore_ind3}
 ggplot(ind_data,aes(x=gcc_90,y=max_solar_elev))+
   geom_point(aes(color=doy),alpha=0.5)+
   geom_smooth(method='lm')+
