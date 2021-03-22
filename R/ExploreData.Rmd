@@ -75,9 +75,9 @@ This is a plot of r mean, g mean, and b mean across time
 # names(ind_data)
 
 ggplot(daily_data,aes(x=date)) +
-  geom_point(aes(y=r_mean),color="darkred",alpha=0.5)+
-  geom_point(aes(y=g_mean),color="darkgreen",alpha=0.5)+
-  geom_point(aes(y=b_mean),color='darkblue',alpha=0.5)+
+  geom_point(aes(y=r_mean),color=rcol,alpha=0.5)+
+  geom_point(aes(y=g_mean),color=gcol,alpha=0.5)+
+  geom_point(aes(y=b_mean),color=bcol,alpha=0.5)+
   geom_vline(xintercept = as.Date('2017-01-01'),color='grey50',alpha=0.5)+
   geom_vline(xintercept = as.Date('2018-01-01'),color='grey50',alpha=0.5)+
   geom_vline(xintercept = as.Date('2019-01-01'),color='grey50',alpha=0.5)+
@@ -88,9 +88,15 @@ ggplot(daily_data,aes(x=date)) +
 
 - Looks like red peaks around November -- severe drop off right as green peaks, which makes sense. 
 
-
+Plot gcc and rcc over time   
+cc = chromatic coordinate = " the ratio of the amount of one primary color to the total amount of all three necessary to reproduce a given color."
 ```{r explore_ind2}
 ggplot(daily_data,aes(x=date))+
+  geom_vline(xintercept = as.Date('2017-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2018-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2019-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2020-01-01'),color='grey50',alpha=0.5)+
+  geom_vline(xintercept = as.Date('2021-01-01'),color='grey50',alpha=0.5)+
   geom_point(aes(y=rcc_90),color=rcol,alpha=0.5)+
   geom_point(aes(y=gcc_90),color=gcol,alpha=0.5)+
   theme_classic()
@@ -121,3 +127,7 @@ corrplot(cor(corr_df[,2:ncol(corr_df)]))
 - Strong positive correlation with max_solar_elev and green variables   
 
 
+
+
+
+https://www.sciencedirect.com/science/article/pii/S0378112716302298
