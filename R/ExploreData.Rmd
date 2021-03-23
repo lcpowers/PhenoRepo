@@ -4,7 +4,9 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,root.dir="/home/claire/Git/PhenoRepo/")
+knitr::opts_chunk$set(echo = TRUE)
+# Claire's root directory
+knitr::opts_chunk$set(root.dir="/home/claire/Git/PhenoRepo/")
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
@@ -23,12 +25,12 @@ library(pals)
 ```
 
 
--[Essential paper to read](https://www.nature.com/articles/sdata201828)   
+-[Essential paper to read?](https://www.nature.com/articles/sdata201828)   
 -[Very useful paper about phenocams and chromatic coordinates](https://www.sciencedirect.com/science/article/pii/S2530064417300019)  
 -[raw image data if interested](https://data.neonscience.org/data-products/DP1.00033.001)   
 -[metadata url](https://daac.ornl.gov/VEGETATION/guides/PhenoCam_V2.html)   
--[GRSM PhenoCam URL](https://phenocam.sr.unh.edu/webcam/sites/NEON.D07.GRSM.DP1.00033/)
--[GRSM PhenoCam ROI URL with ROI mask file](https://phenocam.sr.unh.edu/webcam/roi/NEON.D07.GRSM.DP1.00033/DB_1000/)  
+-[GRSM PhenoCam URL](https://phenocam.sr.unh.edu/webcam/sites/NEON.D07.GRSM.DP1.00033/)    
+-[GRSM PhenoCam ROI URL with ROI mask file](https://phenocam.sr.unh.edu/webcam/roi/NEON.D07.GRSM.DP1.00033/DB_1000/)   
 -[GRSM gcc data csv URL](https://phenocam.sr.unh.edu/data/archive/NEON.D07.GRSM.DP1.00033/ROI/NEON.D07.GRSM.DP1.00033_DB_1000_1day.csv)  
 -[Site to download imagedata](https://phenocam.sr.unh.edu/webcam/network/download/)   
 
