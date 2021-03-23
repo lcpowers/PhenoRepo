@@ -8,8 +8,8 @@ rm(list=ls())
 # Claire's laptop WD
 # setwd("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/")
 
-source("R/NEON/downloadPhenoCam.R")
-source("R/NEON/calculatePhenoCamUncertainty.R")
+source("R/NEONscripts/downloadPhenoCam.R")
+source("R/NEONscripts/calculatePhenoCamUncertainty.R")
 
 ##Selected Sites for Challenge
 siteIDs <- c("NEON.D01.HARV.DP1.00033","NEON.D01.BART.DP1.00033","NEON.D02.SCBI.DP1.00033",

@@ -25,7 +25,12 @@ library(ggfortify)
 -[Essential paper to read](https://www.nature.com/articles/sdata201828)   
 -[Very useful paper about phenocams and chromatic coordinates](https://www.sciencedirect.com/science/article/pii/S2530064417300019)  
 -[raw image data if interested](https://data.neonscience.org/data-products/DP1.00033.001)   
--[metadata url](https://daac.ornl.gov/VEGETATION/guides/PhenoCam_V2.html)
+-[metadata url](https://daac.ornl.gov/VEGETATION/guides/PhenoCam_V2.html)   
+-[GRSM PhenoCam URL](https://phenocam.sr.unh.edu/webcam/sites/NEON.D07.GRSM.DP1.00033/)
+-[GRSM PhenoCam ROI URL with ROI mask file](https://phenocam.sr.unh.edu/webcam/roi/NEON.D07.GRSM.DP1.00033/DB_1000/)  
+-[GRSM gcc data csv URL](https://phenocam.sr.unh.edu/data/archive/NEON.D07.GRSM.DP1.00033/ROI/NEON.D07.GRSM.DP1.00033_DB_1000_1day.csv)  
+-[Site to download imagedata](https://phenocam.sr.unh.edu/webcam/network/download/)   
+
 
 ```{r data, message=FALSE}
 rm(list=ls())
@@ -43,7 +48,7 @@ gcc_data <- read_csv(paste0("data/",site,"/",site,"_gccTargets.csv"))
 gcol <- 'springgreen4'
 rcol <- 'sienna3'
 bcol <- 'dodgerblue3'
-
+doy_pal <- colorRampPalette(kovesi.cyclic_mrybm_35_75_c68(366))(366)
 ```
 
 **Individual data -- looking at time series plots of data for individual photos**
@@ -64,7 +69,8 @@ RCC: One non-normal peak around 0.37, slight left skew to data.
 *Adding horizontal line between plots/plot notes sets*
 ---
 
-Correlation between the three color channels are in columns in the individual photo data set (Not sure about specifics here...Josh? Quantile values?) 
+Correlation between the three color channels are in columns in the individual photo data set 
+From meta data URL "correlation coefficient (across pixels) between red channel DN and green channel DN, over the ROI"
 ```{r ind_corr_hists}
 
 # histograms of correlation columns with mean as vertical red line
@@ -276,12 +282,14 @@ autoplot(pca_res, data = daily_data,
 ```{r more_pca}
 PCs <- as.data.frame(pca_res$x)
 PCs12_df <- cbind(PC1=PCs$PC1,PC2=PCs$PC2, daily_data)
+summary(PCs12_df)
 
 ggplot(PCs12_df,aes(x=PC1,y=gcc_90))+
-  geom_point(aes(color=doy))+
-  scale_color_viridis()+
+  geom_point(aes(color=doy),alpha=0.5)+
+  scale_color_gradientn(colors=doy_pal)+
   geom_smooth(method="lm",se=T)+
   # geom_smooth(se=FALSE,color='red')+
+  theme(legend.position = "none")+
   theme_classic()
 
 ```
