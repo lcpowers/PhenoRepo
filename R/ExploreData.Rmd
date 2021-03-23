@@ -19,6 +19,7 @@ library(cowplot)
 library(viridis)
 library(RColorBrewer)
 library(ggfortify)
+library(pals)
 ```
 
 
@@ -39,11 +40,24 @@ rm(list=ls())
 setwd("/home/claire/Git/PhenoRepo/")
 
 site <- "GRSM"
-# Individual data is not individual data right now!!! Need to fix asap
+
+# Individual data--data for every image taken
 ind_data <- read_csv(paste0("data/",site,"/",site,"_individual.csv"))
+ind_data <- ind_data[,colSums(is.na(ind_data))<nrow(ind_data)]
+# head(ind_data)
+# summary(ind_data)
+
+# Daily data--data for images aggregated by day
 daily_data <- read_csv(paste0("data/",site,"/",site,"_daily.csv")) %>% 
   filter(image_count>0)
+daily_data <- daily_data[,colSums(is.na(daily_data))<nrow(daily_data)]
+# head(daily_data)
+# summary(daily_data)
+
+# GDD data -- response variable
 gcc_data <- read_csv(paste0("data/",site,"/",site,"_gccTargets.csv"))
+# head(gcc_data)
+# summary(gcc_data)
 
 gcol <- 'springgreen4'
 rcol <- 'sienna3'
@@ -227,6 +241,7 @@ ggplot(daily_data,aes(x=date))+
 
 ggplot(daily_data,aes(y=gcc_90,x=max_solar_elev))+
   geom_point(aes(color=doy),alpha=0.5)+
+  scale_color_gradientn(colors=doy_pal)+
   geom_smooth(method='lm')+
   theme_classic()+
   labs(color="Day of year")
@@ -282,7 +297,7 @@ autoplot(pca_res, data = daily_data,
 ```{r more_pca}
 PCs <- as.data.frame(pca_res$x)
 PCs12_df <- cbind(PC1=PCs$PC1,PC2=PCs$PC2, daily_data)
-summary(PCs12_df)
+# summary(PCs12_df)
 
 ggplot(PCs12_df,aes(x=PC1,y=gcc_90))+
   geom_point(aes(color=doy),alpha=0.5)+
