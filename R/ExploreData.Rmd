@@ -271,6 +271,8 @@ autoplot(pca_res, data = daily_data,
 
 ```
 
+# Plot PC1/PC2 against other variables
+
 ```{r more_pca}
 PCs <- as.data.frame(pca_res$x)
 PCs12_df <- cbind(PC1=PCs$PC1,PC2=PCs$PC2, daily_data)
