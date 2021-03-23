@@ -174,8 +174,6 @@ gcc_df <- daily_data %>%
          gcc_mean,gcc_std,
          gcc_50,gcc_75,gcc_90)
 
-gcc_melt_df <- melt(gcc_df,id.vars = c(date,doy))
-
 ggplot(gcc_df,aes(x=date))+
   geom_point(aes(y=gcc_90,color=as.factor(year)))+
   theme_classic()
@@ -250,7 +248,8 @@ corrplot(cor(corr_df[,2:ncol(corr_df)]))
 
 **PCA Plots**
 ```{r pcaplots}
-names(daily_data)
+# names(daily_data)
+
 pca_df <- daily_data %>% 
   dplyr::select(year,doy,
                 # midday_r,midday_g,midday_b,
