@@ -1,6 +1,8 @@
 ---
 title: "Explore Data"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -39,7 +41,7 @@ library(pals)
 rm(list=ls())
 
 # Claire's Rserver WD
-setwd("/home/claire/Git/PhenoRepo/")
+# setwd("/home/claire/Git/PhenoRepo/")
 
 site <- "GRSM"
 
