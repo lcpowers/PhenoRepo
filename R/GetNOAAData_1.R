@@ -1,4 +1,10 @@
 
+library(tidyverse)
+library(ncdf4)
+library(neonstore)
+
+rm(list=ls())
+
 # This function was pulled from the NEON code file
 download_noaa_files_s3 <- function(siteID, date, cycle, local_directory){
   
@@ -12,10 +18,8 @@ download_noaa_files_s3 <- function(siteID, date, cycle, local_directory){
   }
 }
 
-download_noaa_files_s3(siteID = "GRSM", date = "2021-03-10", cycle = "06", local_directory <- "data/drivers/")
-library(tidyverse)
-library(ncdf4)
+# Create a nested loop out of this with site as one variable to iterate over and date as another
+sites <- c("GRSM")
 
-a <- nc_open("data/drivers/noaa/NOAAGEFS_1hr/GRSM/2021-03-10/00/NOAAGEFS_1hr_GRSM_2021-03-10T00_2021-03-26T00_ens00.nc")
-b <- ncdf4::ncvar_get(nc = a,varid = "air_temperature")
+download_noaa_files_s3(siteID = "GRSM", date = "2021-03-10", cycle = "06", local_directory <- "data/drivers/")
 
