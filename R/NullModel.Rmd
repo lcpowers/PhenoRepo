@@ -1,0 +1,46 @@
+---
+title: "NullModel"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Just trying out a simple null model
+
+```{r packagesanddata}
+
+rm(list=ls())
+
+library(tidyverse)
+
+ind_data <- read_csv("./data/GRSM/GRSM_individual.csv")
+
+daily_data <- read_csv("./data/GRSM/GRSM_daily.csv") %>% 
+  filter(!is.na(gcc_90))
+
+target_data <- read_csv("./data/GRSM/GRSM_gccTargets.csv") %>% 
+  filter(!is.na(gcc_90))
+
+```
+
+# simple LM
+```{r simplelm}
+
+lm1 <- lm(gcc_90 ~ max_solar_elev + doy,data=daily_data)
+summary(lm1)  
+
+predict_df <- daily_data %>% 
+  select(max_solar_elev,doy,gcc_90)
+
+predict_df$new_gcc <- predict(object = lm1,newdata = predict_df)
+
+ggplot(data = predict_df,aes(x=doy,y=new_gcc))+
+  #geom_point(aes(y=gcc_90),color='grey',alpha=0.5)+
+  geom_line()+
+  theme_classic()
+
+
+```
+

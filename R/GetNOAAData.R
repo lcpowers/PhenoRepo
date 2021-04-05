@@ -12,7 +12,7 @@ download_noaa_files_s3 <- function(siteID, date, cycle, local_directory){
   }
 }
 
-download_noaa_files_s3(siteID = "GRSM", date = "2021-03-10", cycle = "00", local_directory <- "data/drivers/")
+download_noaa_files_s3(siteID = "GRSM", date = "2021-03-10", cycle = "06", local_directory <- "data/drivers/")
 library(tidyverse)
 library(ncdf4)
 

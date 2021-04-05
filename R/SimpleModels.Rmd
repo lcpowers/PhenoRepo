@@ -1,0 +1,98 @@
+---
+title: "Simple Models"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Packages and Data
+```{r data}
+rm(list=ls())
+
+library(tidyverse)
+library(lubridate)
+library(ggfortify)
+library(viridis)
+
+#Download data
+download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz","data/phenology-targets.csv.gz")
+phenoDat <- read.csv("data/phenology-targets.csv.gz",header=TRUE) %>% 
+  filter(siteID=="GRSM"&!is.na(gcc_90))
+colnames(phenoDat)[3] <-'gcc_target'
+phenoDat$date <- as.Date(phenoDat$time)
+
+dailydat <- read_csv("data/GRSM/GRSM_daily.csv")
+alldat <- full_join(phenoDat,dailydat,by='date')
+
+```
+
+Get midday data
+```{r middaydata}
+# phenodat$time <- NA
+
+# for(ii in 1:nrow(phenodat)){
+#   
+#   print(ii)
+#   time <- strsplit(as.character(phenodat$local_std_time[ii]),":")[[1]] %>% 
+#     as.numeric()
+#   hr <- time[1]/24
+#   min <- time[2]/60/24
+#   sec <- time[3]/60/60/24
+#   decimaltime <- sum(hr,min,sec) 
+#   phenodat$time[ii]<-decimaltime
+#   rm(time,hr,min,sec,decimaltime)
+#   
+# }
+
+# midday <- phenodat %>% 
+#   group_by(date) %>% 
+#   slice(which.min(abs(time-0.5))) %>% 
+#   ungroup()
+
+# ggplot(midday,aes(x=date))+
+#   geom_point(data=phenodat,aes(x=date,y=gcc),color="grey50",alpha=0.5)+
+#   geom_point(aes(y=gcc))+
+#   theme_classic()
+# 
+# 
+# ggplot() + 
+#   geom_point(midday,mapping=aes(x=date,y=gcc),color='blue',alpha=0.5) +
+#   geom_point(dailydat,mapping=aes(x=date,y=gcc_90),color='red',alpha=0.5)+
+#   geom_hline(yintercept = mean(midday$gcc),color='blue')+
+#   geom_hline(yintercept = mean(dailydat$gcc_90,na.rm=T),color='red')+
+#   theme_classic()
+  
+```
+
+Midday summary stats
+```{r summstats}
+
+hist(phenoDat$gcc_90,breaks=50)
+
+ggplot(phenoDat,aes(x=time,y=gcc_90))+
+  geom_point()
+
+```
+
+Midday PCA
+```{r pca}
+
+pca_df <- midday %>% 
+  dplyr::select(year,doy,gcc,solar_elev)
+
+pca_res <- prcomp(pca_df, scale. = TRUE)
+
+autoplot(pca_res, data = midday, 
+         # colour = 'year',
+         # colour='grey50',
+         loadings = TRUE, loadings.label=TRUE,
+         loadings.colour='grey50',loadings.label.colour='darkred',
+         loadings.label.size = 5,alpha = 0.5)+
+  theme_classic()+
+  scale_color_viridis(option = "D")
+
+```
+
+
