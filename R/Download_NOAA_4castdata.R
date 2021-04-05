@@ -18,8 +18,5 @@ download_noaa_files_s3 <- function(siteID, date, cycle, local_directory){
   }
 }
 
-# Create a nested loop out of this with site as one variable to iterate over and date as another
-sites <- c("GRSM")
-
+# Create a nested loop out of this with site as one variable to iterate over and date as another?
 download_noaa_files_s3(siteID = "GRSM", date = "2021-03-10", cycle = "06", local_directory <- "data/drivers/")
-

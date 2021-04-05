@@ -22,17 +22,21 @@
 library(tidyverse)
 
 noaa_gefs_read <- function(base_dir, date, cycle, sites){
-  
+
+  # Check for correct cycle 
   if(!(cycle %in% c("00","06","12","18"))){
     stop("cycle not available cycles of 00, 06,12,18")
   }
   
   cf_met_vars <- c("air_temperature",
+                   "air_pressure",
+                   "relative_humidity",
+                   "specific_humidity",
                    "surface_downwelling_shortwave_flux_in_air",
                    "surface_downwelling_longwave_flux_in_air",
-                   "relative_humidity",
-                   "wind_speed",
-                   "precipitation_flux")
+                   "precipitation_flux",
+                   "cloud_area_fraction",
+                   "wind_speed")
   
   combined_met <- NULL
   

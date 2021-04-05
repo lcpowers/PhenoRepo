@@ -12,4 +12,5 @@ cycle <- "06"
 
 sites <- c("GRSM")
 
+# DF here is the NOAA forecast data
 df <- noaa_gefs_read(base_dir, date, cycle, sites)
