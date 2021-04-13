@@ -6,7 +6,7 @@ library(RColorBrewer)
 rm(list=ls())
 
 # Claire's laptop WD
-# setwd("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/")
+setwd("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/")
 
 source("R/NEONscripts/downloadPhenoCam.R")
 source("R/NEONscripts/calculatePhenoCamUncertainty.R")
@@ -63,22 +63,22 @@ for(i in 1:length(siteIDs)){
   
   allData <- rbind(allData,subPhenoData)
   
-  # ggplot(allData,aes(x=time,y=gcc_90))+
-  #   geom_vline(xintercept=as.Date('2017-01-01'),color='grey50',alpha=0.5,linetype=3)+
-  #   geom_vline(xintercept=as.Date('2018-01-01'),color='grey50',alpha=0.5,linetype=3)+
-  #   geom_vline(xintercept=as.Date('2019-01-01'),color='grey50',alpha=0.5,linetype=3)+
-  #   geom_vline(xintercept=as.Date('2020-01-01'),color='grey50',alpha=0.5,linetype=3)+
-  #   geom_vline(xintercept=as.Date('2021-01-01'),color='grey50',alpha=0.5,linetype=3)+
-  #   # geom_ribbon(aes(ymin=gcc_90-gcc_sd,ymax=gcc_90+gcc_sd))+
-  #   geom_line(aes(color=gcc_90))+
-  #   #geom_point(aes(color=gcc_90),alpha=0.5)+
-  #   scale_color_gradient(low="white",high="darkgreen")+
-  #   scale_x_date(date_breaks = "3 months")+
-  #   theme_classic()+
-  #   theme(axis.text = element_text(angle=90))
-  # 
-  # ggsave(paste0("DataExplorationPlots/time_vs_gcc90_",site_names[i],".png"),height = 5,width = 10)
-  
+  ggplot(allData,aes(x=time,y=gcc_90))+
+    geom_vline(xintercept=as.Date('2017-01-01'),color='grey50',alpha=0.5,linetype=3)+
+    geom_vline(xintercept=as.Date('2018-01-01'),color='grey50',alpha=0.5,linetype=3)+
+    geom_vline(xintercept=as.Date('2019-01-01'),color='grey50',alpha=0.5,linetype=3)+
+    geom_vline(xintercept=as.Date('2020-01-01'),color='grey50',alpha=0.5,linetype=3)+
+    geom_vline(xintercept=as.Date('2021-01-01'),color='grey50',alpha=0.5,linetype=3)+
+    # geom_ribbon(aes(ymin=gcc_90-gcc_sd,ymax=gcc_90+gcc_sd))+
+    geom_line(aes(color=gcc_90))+
+    #geom_point(aes(color=gcc_90),alpha=0.5)+
+    scale_color_gradient(low="white",high="darkgreen")+
+    scale_x_date(date_breaks = "3 months")+
+    theme_classic()+
+    theme(axis.text = element_text(angle=90))
+
+  ggsave(paste0("DataExplorationPlots/time_vs_gcc90_",site_names[i],".png"),height = 5,width = 10)
+
 }
 
 full_time <- seq(min(allData$time),max(allData$time), by = "1 day")

@@ -1,5 +1,4 @@
 library(neonstore)
-library(neonUtilities)
 
 # Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
 # Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
@@ -14,14 +13,11 @@ neonstore::neon_download(product = "DP4.00200.001", site = sites, type = "basic"
 print("Downloading: DP1.00094.001")
 neonstore::neon_download(product = "DP1.00094.001", site = sites, type = "basic", start_date = NA, .token = Sys.getenv("NEON_TOKEN"))
 
-#neon_store(product = "DP4.00200.001",dir="data/drivers/neon/") 
-#neon_store(table = "SWS_30_minute", n = 50,dir="data/drivers/neon/") 
+neon_store(product = "DP4.00200.001") 
+neon_store(table = "SWS_30_minute", n = 50) 
 
 neon_download(product = "DP4.00001.001", # Summary weather statistics
               start_date = NA,
               end_date = "2019-12-31",   # end date for training data
               site = target.sites,       # target sites defined from 00_Target_Species_EDA.Rmd
               type = "basic")    
-
-
-stackByTable(filepath = "data/drivers/neon/NEON_eddy-flux.zip")
