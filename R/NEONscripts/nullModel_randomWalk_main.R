@@ -4,18 +4,19 @@ library("ncdf4")
 library("tidybayes")
 library("tidyverse")
 
-source("randomWalkNullModelFunction.R")
+# source("R/NEONscripts/randomWalkNullModelFunction.R")
 ###Random WalkNull Model Calculations
 ####Note: Currently this is not set up to run iteratively because I am not sure how the challenge is planning on doing this.
 ####Note (continued): Hopefully someone who knows about how this will be done can use this code to do that
-
+rm(list=ls())
 generate_plots <- TRUE
-team_name <- "EFInull"
+team_name <- "TEST"
 
 download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz",
               "phenology-targets.csv.gz")
 
-phenoDat <- read.csv("phenology-targets.csv.gz",header=TRUE)
+phenoDat <- read.csv("phenology-targets.csv.gz",header=TRUE) %>% 
+  filter(siteID=='GRSM')
 sites <- unique(as.character(phenoDat$siteID))
 
 forecast_length <- 35
@@ -52,8 +53,6 @@ for(s in 1:length(sites)){
   
   forecast_length <- 35
   
-  
-  
   sitePhenoDat <- phenoDat[phenoDat$siteID==sites[s],]
   sitePhenoDat$time <- lubridate::as_date(sitePhenoDat$time)
   
@@ -73,8 +72,8 @@ for(s in 1:length(sites)){
   
   #gap fill the missing precisions by assigning them the average sd for the site
   d$p.sd[!is.finite(d$p.sd)] <- NA
-  d$p.sd[is.na(d$p.sd)] <- mean(d$p.sd,na.rm=TRUE)
-  d$p.sd[d$p.sd == 0.0] <- min(d$p.sd[d$p.sd != 0.0])
+  d$p.sd[is.na(d$p.sd)] <- mean(d$p.sd,na.rm=TRUE) # Fill in NA values with the mean sd
+  d$p.sd[d$p.sd == 0.0] <- min(d$p.sd[d$p.sd != 0.0]) 
   d$N <- length(d$p)
   data <- list(y = d$p,
                sd_obs = d$p.sd,
@@ -141,7 +140,7 @@ for(s in 1:length(sites)){
       geom_point(data = obs, aes(x = time, y = obs), color = "red") +
       labs(x = "Date", y = "oxygen")
     
-    ggsave(paste0("phenology_",site_names[s],"_figure.pdf"), device = "pdf")
+    ggsave(paste0("phenology_",sites[s],"_figure.pdf"), device = "pdf")
   }
   
   #Filter only the forecasted dates and add columns for required variable
@@ -151,7 +150,7 @@ for(s in 1:length(sites)){
     mutate(data_assimilation = 0,
            forecast = 1,
            obs_flag = 2,
-           siteID = site_names[s]) %>%
+           siteID = sites[s]) %>%
     mutate(forecast_iteration_id = start_forecast) %>%
     mutate(forecast_project_id = team_name)
   

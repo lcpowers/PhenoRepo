@@ -1,0 +1,73 @@
+---
+title: "Explore Pheno Data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load packages and data
+```{r packages}
+rm(list=ls())
+library(corrplot)
+library(tidyverse)
+library(ggbiplot)
+library(ggfortify)
+library(viridis)
+
+# site_names <- c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
+setwd("./R")
+
+# Claire's WD
+setwd("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/")
+
+site <- "GRSM"
+individualdata <- read_csv(paste0("./data/",site,"/",site,"_individual.csv")) %>% 
+  filter(!is.na(midday_r))
+gccdata <- read.csv(paste0("./data/",site,"/",site,"_gccTargets.csv"))
+```
+
+Correlation plots
+```{r corrplots}
+corrplot_df <- individualdata[,6:27] %>% 
+  filter(complete.cases(.))
+summary(corrplot_df)
+corrplot(cor(corrplot_df))
+```
+
+PCA
+```{r pca}
+
+pca_df <- individualdata[,1:27] %>% 
+  filter(complete.cases(.)) %>% 
+  dplyr::select(year,doy,midday_r,midday_g,midday_b,midday_rcc,gcc_90)
+pca_res <- prcomp(pca_df, scale. = TRUE)
+
+autoplot(pca_res, data = individualdata, colour = 'year',
+         loadings = TRUE, loadings.label=TRUE,
+         loadings.colour='grey50',loadings.label.colour='darkred',
+         loadings.label.size = 5,alpha = 0.75)+
+  theme_classic()+
+  scale_color_viridis(option = "D")
+# ggsave("PCA3mthENSO_TWgroups_birds.png")
+
+PCs <- as.data.frame(pca_res$x)
+PCs12_df <- cbind(PC1=PCs$PC1,PC2=PCs$PC2, pca_df)
+
+ggplot(PCs12_df,aes(x=PC1,y=gcc_90))+
+  geom_point(aes(color=doy))+
+  scale_color_viridis()+
+  geom_smooth(method="lm",se=T)+
+  # geom_smooth(se=FALSE,color='red')+
+  theme_classic()
+
+abundance.pca <- prcomp(pca_df, center = T,scale. = T)
+summary(abundance.pca)
+str(abundance.pca)
+
+ggbiplot(abundance.pca)+
+  theme_classic()
+
+```
+
