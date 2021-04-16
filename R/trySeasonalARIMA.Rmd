@@ -19,8 +19,6 @@ library(neon4cast)
 library(tsibble)
 library(fable)
 library(scoringRules)
-setwd("R/")
-source()
 ```
 
 ```{r data}

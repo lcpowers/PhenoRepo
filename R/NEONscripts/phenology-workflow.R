@@ -7,13 +7,13 @@ source("R/NEONscripts/downloadPhenoCam.R")
 source("R/NEONscripts/calculatePhenoCamUncertainty.R")
 
 ##Selected Sites for Challenge
-# siteIDs <- c("NEON.D01.HARV.DP1.00033","NEON.D01.BART.DP1.00033","NEON.D02.SCBI.DP1.00033",
-             # "NEON.D05.STEI.DP1.00033","NEON.D06.UKFS.DP1.00033","NEON.D07.GRSM.DP1.00033",
-             # "NEON.D08.DELA.DP1.00033","NEON.D11.CLBJ.DP1.00033")
+siteIDs <- c("NEON.D01.HARV.DP1.00033","NEON.D01.BART.DP1.00033","NEON.D02.SCBI.DP1.00033",
+             "NEON.D05.STEI.DP1.00033","NEON.D06.UKFS.DP1.00033","NEON.D07.GRSM.DP1.00033",
+             "NEON.D08.DELA.DP1.00033","NEON.D11.CLBJ.DP1.00033")
 
-siteIDs <- "NEON.D07.GRSM.DP1.00033"
-# site_names <- c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
-site_names = "GRSM"
+# siteIDs <- "NEON.D07.GRSM.DP1.00033"
+site_names <- c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
+# site_names = "GRSM"
 
 allData <- data.frame(matrix(nrow = 0, ncol = 5))
 
@@ -44,17 +44,17 @@ for(i in 1:length(siteIDs)){
     
 }
 
-full_time <- seq(min(allData$time),max(allData$time), by = "1 day")
+# full_time <- seq(min(allData$time),max(allData$time), by = "1 day")
 
-# full_time <- tibble(time = rep(full_time, 8),
-#                     siteID = c(rep("HARV", length(full_time)),
-#                                rep("BART", length(full_time)),
-#                                rep("SCBI", length(full_time)),
-#                                rep("STEI", length(full_time)),
-#                                rep("UKFS", length(full_time)),
-#                                rep("GRSM", length(full_time)),
-#                                rep("DELA", length(full_time)),
-#                                rep("CLBJ", length(full_time))))
+full_time <- tibble(time = rep(full_time, 8),
+                    siteID = c(rep("HARV", length(full_time)),
+                               rep("BART", length(full_time)),
+                               rep("SCBI", length(full_time)),
+                               rep("STEI", length(full_time)),
+                               rep("UKFS", length(full_time)),
+                               rep("GRSM", length(full_time)),
+                               rep("DELA", length(full_time)),
+                               rep("CLBJ", length(full_time))))
 
 full_time <- tibble(time = rep(full_time, 1),
                     siteID = c(rep("GRSM", length(full_time))))

@@ -42,5 +42,6 @@ midday_gcc <- merge(midday_gcc,targets, by.x='date',by.y='time')
 colnames(midday_gcc)[6]<-'target_gcc_90'
 midday_gcc$equal = midday_gcc$SE10_gcc_90==midday_gcc$target_gcc_90
 
+a <- read_csv("./data/pheno/allsites_gccTargets.csv")
 ```
 
