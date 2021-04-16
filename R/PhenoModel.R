@@ -14,5 +14,5 @@ initial(RB) <- 1 - G_init
 # Parameters
 G_init <- 0.2
 beta <- 0.05
-gamma <- .01
+delta <- .01
 
