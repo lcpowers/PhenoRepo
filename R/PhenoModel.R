@@ -13,6 +13,6 @@ initial(RB) <- 1 - G_init
 
 # Parameters
 G_init <- 0.2
-beta <- 0.05
+beta <- if (i<4) 3 else 0
 delta <- .1
 
