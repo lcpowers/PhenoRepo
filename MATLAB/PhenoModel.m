@@ -19,14 +19,14 @@ delta = @(i) (0 * (i <= 100)) +...
     (0 * (i > 310));
 
 % Create Vectors
-G = zeros(start + x + 1); N = zeros(start + x + 1);
+%G = zeros(start + x + 1); N = zeros(start + x + 1);
 
 % Initial conditions
 G(start) = G_init;
 N(start) = 1 - G_init;
 
 % Model sim
-for i = start:(start+x+1)
+for i = start+1:(start+x)
     
     G(i) = (1 - delta(i)) * G(i-1) + beta(i) * N(i-1);
     N(i) = (1 - beta(i)) * N(i-1) + delta(i) * G(i-1);
