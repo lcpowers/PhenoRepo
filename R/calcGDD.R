@@ -70,5 +70,5 @@ for(site in sites){
   final_temp_df <- rbind(final_temp_df,years_df)
 }
 
-
+write_csv(final_temp_df,"data/drivers/neon/GDDandtemp_allsites.csv")
 
