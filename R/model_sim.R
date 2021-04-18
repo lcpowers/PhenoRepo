@@ -8,9 +8,10 @@ path_pheno_model <- "R/PhenoModel.R"
 #######    Compile Model using odin    -------------------------------------
 
 model_generator <- odin::odin(path_pheno_model)
-model <-model_generator() # generate an instance of model
 
 #######   Run Model   -------------------------------------------------------
+
+model <-model_generator() # generate an instance of model
 
 phen_col = c("#036722","#350c5e")
 runs = 10
