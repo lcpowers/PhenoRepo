@@ -29,7 +29,9 @@ library(reshape2)
 
 Get data
 ```{r data}
-full_data <- read_csv("./data/pheno/allsites_gccTargets.csv")
+full_data <- read_csv("./data/pheno/allsites_gccTargets.csv") %>% 
+  filter(time <= as.Date('2021-03-01'))
+
 download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz","data/pheno/phenology-targets.csv.gz")
 targets <- read_csv("data/pheno/phenology-targets.csv.gz")
 
@@ -96,7 +98,7 @@ for(s in 1:length(sites)){
     arrange(time) %>% 
     select(1:4)
   
-  first_date <- tmp_df$time[1]
+  first_date <- as.Date(min(tmp_df$time))
   year <- as.numeric(str_sub(first_date,1,4))
   doy <- as.numeric(strftime(first_date, format = "%j"))
   
@@ -108,7 +110,7 @@ for(s in 1:length(sites)){
   tmp_forecast <- forecast::forecast(tmp_arima,h=35,bootstrap=T)
   assign(paste0(sites[s],"_4cast"),tmp_forecast)
 
-  tmp_4cast_df <- data.frame(time = seq(Sys.Date(), by="day",length.out = 35),
+  tmp_4cast_df <- data.frame(time = seq(as.Date(max(tmp_df$time)), by="day",length.out = 35),
                             siteID = sites[s],
                             gcc_90 = as.numeric(round(tmp_forecast$mean,4)),
                             gcc_sd = as.numeric(round(tmp_forecast$mean-tmp_forecast$lower[2],4))) 
@@ -119,7 +121,7 @@ for(s in 1:length(sites)){
   }
 
 all_data <- rbind(full_data[,1:4],all_forecast) %>% arrange(siteID,time)
-save(list=ls(all.names=T),file="R/ARIMA_4132021.Rdata")
+save(list=ls(all.names=T),file="R/ARIMA_20210301.Rdata")
 ```
 
 ```{r}
@@ -163,10 +165,11 @@ score_df <- melt(all_forecast,id.vars = c("time","siteID"),
 score_df$statistic <- ifelse(score_df$statistic=="gcc_90","mean","sd")
 score_df$statistic <- as.character(score_df$statistic)
 
-class(score_df) <- class(example) # Didn't work
+# class(score_df) <- class(example) # Didn't work
 
 # This only seems to work when we want to score relative to PhenoCam data that has already been observed
-scores <- neon4cast::score(example,theme=c("phenology"))
+scores <- neon4cast::score(score_df,theme=c("phenology"))
+
 ```
 
 
