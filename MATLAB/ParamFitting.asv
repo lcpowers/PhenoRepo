@@ -8,37 +8,42 @@ cd('C:\Users\17313\Documents\NEON\PhenoRepo\data\pheno\GRSM');
 targets = readtable('GRSM_gccTargets.csv');
 targets = targets{343:707,3}; % data for 2018
 
-time = 0:365;
-
 % Discrete Model Simulatioin
 
 % boolean for displaying figures
 fig_on = true;
 
 T = 364; %days
-time = 0:T;
+x = [0:T]';
 
-a = .005;
-b = .0005;
-c = .01;
-G_init = 0.3475;
+     G_init           a           b           c 
+0.346938776 0.004081633 0.000000000 0.008163265
+% a = 0.004081633;
+% b = .0005;
+% c = .01;
+% G_init = 0.346938776;
 
-[gcc,ncc] = PhenoModel(T,G_init,a,b,c);
-
-% plot data
-if fig_on == true
-    plot(time,targets,'k'); hold on;
-    ylabel('Proportion of Pixels'); xlabel('Time (days)');
-    % Plots
-    plot(time,gcc,'g',time,ncc,'b'); hold off;
-    ylabel('Proportion of Pixels'); xlabel('Time (days)');
-    legend('Green','Non-green','Location','northeast');
-end
+% a = .005;
+% b = .0005;
+% c = .01;
+% G_init = 0.3475;
 
 
 %% Fitting Model
-ft = fittype( 'PhenoModel(T,G_init,a,b,c)' );
-f=fit(x,A,ft, 'StartPoint',[2.094,2.033,1.389], 'Lower',[0,0,0])
-eqn = f.a * log(f.b * x_test + f.c);
-eqnLabel = strcat("y = ",num2str(f.a)," ln ( ",num2str(f.b),"x + ",num2str(f.c)," )")
+% built in fit function did not work? Trying something else
+%ft = fittype( 'PhenoModel(x,G_init,a,b,c)' );
+%f=fit(x,targets,ft,'StartPoint',[.3475,.0055,.0005,.01]);
+%[gcc,ncc] = PhenoModel(T,f.G_init,f.a,f.b,f.c);
+
+% Grid search: every possible parameter combination [0,1]
+
+% plot data
+if fig_on == true
+    plot(x,targets,'k'); hold on;
+    ylabel('Proportion of Pixels'); xlabel('Time (days)');
+    % Plots
+    plot(x,gcc,'g'); hold off;
+    ylabel('Proportion of Pixels'); xlabel('Time (days)');
+    %legend('Green','Non-green','Location','northeast');
+end
 

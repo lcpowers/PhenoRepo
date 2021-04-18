@@ -9,12 +9,19 @@ targets = readtable('GRSM_gccTargets.csv');
 targets = targets{343:707,3}; % data for 2018
 
 % Discrete Model Simulatioin
-
+cd('C:\Users\17313\Documents\NEON\PhenoRepo\MATLAB');
 % boolean for displaying figures
 fig_on = true;
 
 T = 364; %days
 x = [0:T]';
+
+ a = 0.0054031551;
+ b = 0.0005266447;
+ c = 0.0069854384;
+ G_init = 0.3490258844;
+ 
+ [gcc,ncc] = PhenoModel(T,1,G_init,a,b,c);
 
 % a = .005;
 % b = .0005;
