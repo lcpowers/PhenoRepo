@@ -1,7 +1,10 @@
 library(here) #for easy management of file paths within the repository
 library(tidyverse)
 
+rm(list=ls())
+
 source(here("R/gridsearch_Casey.R")) #for gridsearch() function
+source("R/PhenoModel.R")
 
 # Read and format target data
 targets <- read.csv(file = 'data/pheno/GRSM/GRSM_gccTargets.csv') %>% 
