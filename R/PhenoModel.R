@@ -1,6 +1,6 @@
 # Phenology Model - NEON Challenge
 
-PhenoModel <- function(x,G_init,a,b,c) {
+PhenoModel <- function(x,G_init,a,b,c,d) {
   
   n <- length(x)
   
