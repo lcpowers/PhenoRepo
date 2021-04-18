@@ -1,11 +1,12 @@
 library(here) #for easy management of file paths within the repository
 library(tidyverse)
 
-source(here("R/gridsearch.R")) #for gridsearch() function
+source(here("R/gridsearch_Casey.R")) #for gridsearch() function
 
 # Read and format target data
-targets <- read.csv(file = 'data/pheno/GRSM/GRSM_gccTargets.csv')
-targets <- targets %>% select(1,3)
+targets <- read.csv(file = 'data/pheno/GRSM/GRSM_gccTargets.csv') %>% 
+  select(1,3) %>% 
+  filter(!is.na(gcc_90))
 targets$time <- as.Date(targets$time)
 
 dayOne = as.Date("01-01-17","%m-%d-%y")
