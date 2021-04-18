@@ -5,10 +5,11 @@ PhenoModel <- function(x,G_init,a,b,c) {
   n <- length(x)
   
   # Parameters
-  beta <- a * (x > 100 & x <= 130)
+  beta <- a * x * (x > 100 & x <= 130) +
+    d * (x > 310 | x <= 100)
   
   delta <- b * (x > 130 & x <= 290) +
-    c * (x > 290 & x <= 310)
+    c * x * (x > 290 & x <= 310)
   
   # Create Vectors
   G <- rep(0,n)
