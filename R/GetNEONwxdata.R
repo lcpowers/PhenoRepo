@@ -6,19 +6,21 @@ library(neonstore)
 library(tidyverse)
 library(neonUtilities)
 rm(list=ls())
-Sys.setenv("NEONSTORE_HOME" = "data/drivers/neon/")
-Sys.setenv("NEONSTORE_DB" = "data/drivers/neon/")
-sites <- c('STEI', 'UKFS', 'DELA')
-#sites <- c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
+#Sys.setenv("NEONSTORE_HOME" = "data/drivers/neon/")
+#Sys.setenv("NEONSTORE_DB" = "data/drivers/neon/")
+
+targets <- read_csv("data/pheno/allsites_gccTargets.csv")
+sites <- c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
 
 # This is the earliest date in targets. Use this date if acquiring a new date product, otherwise see the date immediately above the date products below
 start_date <- "2016-12-13"
+
 # Last date downloaded was 2021-04-17
 # start_date <- "2021-04-17" ## UPDATE IF DOWNLOADING NEW DATA -- Ideally append new data to existing files
 
 for(site in sites){
-  site = sites[1]
-  dir.create(paste0("data/drivers/neon/",site))
+
+  #dir.create(paste0("data/drivers/neon/",site))
   # RH <- loadByProduct(dpID="DP1.00098.001", 
   #                     site=site, 
   #                     startdate=start_date,
@@ -53,8 +55,8 @@ for(site in sites){
   # write_csv(as.data.frame(Precip$variables_00006),
   #           paste0("data/drivers/neon/",site,"/precip_vars.csv"))
   
-  Temp <- loadByProduct(dpID="DP1.00002.001", 
-                        site=site, 
+  Temp <- loadByProduct(dpID="DP1.00002.001",
+                        site=site,
                         startdate=start_date,
                         package="basic",
                         check.size=F)
@@ -76,7 +78,7 @@ all_temp <- NULL
 for(site in sites){
 
   tmp_temp <- read.csv(paste0("data/drivers/neon/",site,"/temp.csv")) 
-  tmp_temp$date <- str_sub(tmp_temp$startDateTime,1,10)
+  tmp_temp$date <- as.Date(str_sub(tmp_temp$startDateTime,1,10))
   tmp_temp$time <- str_sub(tmp_temp$startDateTime,12,19)
   
   output_temp <- tmp_temp %>% 
@@ -102,3 +104,9 @@ for(site in sites){
 }
 
 write_csv(all_temp,"data/drivers/neon/temperature.csv")
+ggplot(all_temp,aes(x=date,y=mean))+
+  geom_point(aes(color=siteID))+
+  facet_wrap(~siteID)
+
+
+
