@@ -63,28 +63,27 @@ b <- 0.0005266447
 c <- 0.0069854384
 
 model_results <-  as.data.frame(LinPhenoMod(targets$day,G_init,a,b,c))
+colnames(model_results)[1] <- "model_results"
+
 ggplot() +
   geom_point(data = targets, aes(x = time, y = gcc_90), color = "green") +
-  geom_line(data = model_results, aes(x = targets$time, y = model_results))
+  geom_line(data = model_results, aes(x = targets$time, y = model_results)) +
+  theme_classic()
 
 
 # Model results - with exponential growth and medium gridsearch fit
-G_init <- fit$par["G_init"]
-a <- fit$par["a"] 
-b <- fit$par["b"]
-c <- fit$par["c"]
-d <- fit$par["d"]
+G_init <- 3.494092e-01 # fit$par["G_init"]
+a <-  4.275827e-05 
+b <- 5.005463e-04 
+c <- 2.806884e-05
+d <- 1.750219e-04
 model_results <-  as.data.frame(PhenoModel(targets$day,G_init,a,b,c,d))
+colnames(model_results)[1] <- "model_results"
 
 ggplot() +
   geom_point(data = targets, aes(x = time, y = gcc_90), color = "green") +
-  geom_line(data = model_results, aes(x = targets$time, y = model_results))
-
-
-
-
-
-
+  geom_line(aes(x = targets$time, y = model_results$model_results)) +
+  theme_classic()
 
 
 
