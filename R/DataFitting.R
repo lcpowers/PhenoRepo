@@ -52,6 +52,7 @@ starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["c"],fit$par["d"
 
 fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, x=targets$day)
 fit
+save.image(paste0("R/gridsearch_",Sys.Date(),".RData"))
 
 
 # Plot model results against data to test accuracy
@@ -85,5 +86,6 @@ ggplot() +
   geom_line(aes(x = targets$time, y = model_results$model_results)) +
   theme_classic()
 
-
+model_data = cbind(targets, model_results)
+write.csv(model_data,'model_data.csv')
 
