@@ -41,39 +41,54 @@ for(site in sites){
   # write_csv(as.data.frame(Wind$variables_00001),
   #           paste0("data/drivers/neon/",site,"/wind_vars.csv"))
   # 
-  # Precip <- loadByProduct(dpID="DP1.00006.001", 
-  #                         site=site, 
-  #                         startdate=start_date,
-  #                         package="basic",
-  #                         check.size=F)
-  # # primary_precip <- Precip
-  # write_csv(primary_precip,paste0("data/drivers/neon/",site,"/prim_precip.csv"))
-  # secondary_precip <- Precip$SECPRE_30min
-  # write_csv(secondary_precip,paste0("data/drivers/neon/",site,"/sec_precip.csv"))
-  # tf_precip <- Precip$THRPRE_30min
-  # write_csv(tf_precip,paste0("data/drivers/neon/",site,"/tf_precip.csv"))
-  # write_csv(as.data.frame(Precip$variables_00006),
-  #           paste0("data/drivers/neon/",site,"/precip_vars.csv"))
+  Precip <- loadByProduct(dpID="DP1.00006.001",
+                          site=site,
+                          startdate=start_date,
+                          package="basic",
+                          check.size=F)
+  primary_precip <- Precip$PRIPRE_30min
+  if(!is.null(primary_precip)) {
+    write_csv(primary_precip,paste0("data/drivers/neon/",site,"/precip_prim.csv"))
+  } else {
+      print(paste0("No primary precip: ",site))
+    }
   
-  Temp <- loadByProduct(dpID="DP1.00002.001",
-                        site=site,
-                        startdate=start_date,
-                        package="basic",
-                        check.size=F)
-
-  temp_df <- Temp$SAAT_30min
-  write_csv(temp_df,paste0("data/drivers/neon/",site,"/temp.csv"))
-  write_csv(as.data.frame(Temp$variables_00002),
-            paste0("data/drivers/neon/",site,"/temp_vars.csv"))
+  secondary_precip <- Precip$SECPRE_30min
+  if(!is.null(secondary_precip)) {
+    write_csv(secondary_precip,paste0("data/drivers/neon/",site,"/precip_sec.csv"))
+  } else {
+    print(paste0("No secondary precip: ",site))
+  }
+  
+  tf_precip <- Precip$THRPRE_30min
+  if(!is.null(tf_precip)) {
+    write_csv(tf_precip,paste0("data/drivers/neon/",site,"/precip_tf.csv"))
+  } else {
+    print(paste0("No tf precip: ",site))
+  }
+  
+  write_csv(as.data.frame(Precip$variables_00006),
+            paste0("data/drivers/neon/",site,"/precip_vars.csv"))
+  
+  # Temp <- loadByProduct(dpID="DP1.00002.001",
+  #                       site=site,
+  #                       startdate=start_date,
+  #                       package="basic",
+  #                       check.size=F)
+  # 
+  # temp_df <- Temp$SAAT_30min
+  # write_csv(temp_df,paste0("data/drivers/neon/",site,"/temp.csv"))
+  # write_csv(as.data.frame(Temp$variables_00002),
+  #           paste0("data/drivers/neon/",site,"/temp_vars.csv"))
   
   rm(Temp,temp_df,Precip,primary_precip,Wind,wind_df,RH,rh_df,rh_vars)
 }
 
 # Process weather data
-# Temp
-# STEI, UKFS, DELA
+
 sites <- c("HARV", "BART", "SCBI", "GRSM", "CLBJ",'STEI', 'UKFS', 'DELA')
 
+# Temp
 all_temp <- NULL
 for(site in sites){
 
@@ -108,5 +123,5 @@ ggplot(all_temp,aes(x=date,y=mean))+
   geom_point(aes(color=siteID))+
   facet_wrap(~siteID)
 
-
+# Precip
 
