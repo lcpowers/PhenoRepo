@@ -5,14 +5,21 @@
 # And finally finds the number of GDD days for the year to date
 
 library(tidyverse)
-library(pollen)
 rm(list=ls())
 
 # sites <- "GRSM"
 sites = c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
 
-temp_df <- read_csv("data/drivers/neon/temperature.csv") %>% 
-  filter(!is.na(mean))
+temp_df <- read_csv("data/drivers/neon/temps_allsites.csv") %>% 
+  filter(!is.na(daily_min)&!is.na(daily_max))
+
+gdd_fun <- function(tmin,tmax,tbase){
+  
+  gdd <- (tmin+tmax)/2-tbase
+  gdd <- ifelse(gdd<0,0,gdd)
+  return(gdd)
+  
+}
 
 gdd_df <- NULL
 
@@ -28,47 +35,28 @@ for(site in sites){
     year_df <- site_df %>% 
       filter(str_detect(date,year))
   
-    year_df$GDD <- gdd(tmax=year_df$max,
-                       tmin=year_df$min,
-                       tbase=10,
-                       tbase_max=20)
+    year_df$GDDdaily <- gdd_fun(tmin=year_df$daily_min,
+                           tmax=year_df$daily_max,
+                           tbase = 10)
+      
+    
+    GDDtotal <- diffinv(year_df$GDDdaily,lag = 1)
+    year_df$GDDtotal <- GDDtotal[2:length(GDDtotal)]
+    year_df$GDDlogic <- ifelse(year_df$GDDdaily>0,1,0)
+    year_df$GDDdays <- NA
+    for(rowi in 1:nrow(year_df)){
+      year_df$GDDdays[rowi]<-sum(year_df$GDDlogic[1:rowi])
+    }
+
     gdd_df <- rbind(gdd_df,year_df)
     rm(year_df)
     
   }
    
-  rm(site_df,year,site)
+  rm(site_df,year,site,GDDtotal)
 }
 
-gdd_df$GDDdiff <- c(0,diff(gdd_df$GDD,lag=1))
-gdd_df$GDDlogic <- ifelse(gdd_df$GDDdiff>0,1,0)
+gdd_df$GDDlogic <- ifelse(gdd_df$GDDdaily>0,1,0)
 
-final_temp_df <- NULL
-years <- unique(substr(gdd_df$date,1,4))
-
-for(site in sites){
-  
-  site_df <- filter(gdd_df, siteID == site)
-  years <- unique(substr(site_df$date, 1,4))
-  
-  years_df <- NULL
-  for(year in years){
-    
-    year_df <- site_df %>% 
-      filter(str_detect(date,year))
-    
-    year_df$GDDdays <- NA
-    year_df$GDDdays[1] <- year_df$GDDlogic[1] 
-    
-    for(rowi in 2:nrow(year_df)){
-      year_df$GDDdays[rowi] <- sum(year_df$GDDlogic[rowi-1:rowi])
-      
-    }
-    years_df <- rbind(years_df,year_df)
-    
-  }
-  final_temp_df <- rbind(final_temp_df,years_df)
-}
-
-write_csv(final_temp_df,"data/drivers/neon/GDDandtemp_allsites.csv")
+write_csv(gdd_df,"data/drivers/neon/GDDandtemp_allsites.csv")
 

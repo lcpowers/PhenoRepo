@@ -96,30 +96,44 @@ for(site in sites){
   tmp_temp$date <- as.Date(str_sub(tmp_temp$startDateTime,1,10))
   tmp_temp$time <- str_sub(tmp_temp$startDateTime,12,19)
   
-  output_temp <- tmp_temp %>% 
+  daily_temp <- tmp_temp %>% 
+    group_by(date,siteID) %>% 
+    summarize(daily_mean=mean(tempSingleMean,na.rm=T),
+              daily_min=min(tempSingleMinimum,na.rm=T),
+              daily_max=max(tempSingleMaximum,na.rm=T),
+              daily_var=var(tempSingleVariance,na.rm=T))
+    
+    
+  daily_temp$daily_mean[is.nan(daily_temp$daily_mean)]<-NA
+  daily_temp$daily_min[is.na(daily_temp$daily_mean)]<-NA
+  daily_temp$daily_max[is.na(daily_temp$daily_mean)]<-NA
+  
+  midday_temp <- tmp_temp %>% 
     filter(time%in%c('11:00:00','11:30:00','12:00:00','12:30:00')) %>% 
     group_by(date,siteID) %>% 
-    summarize(mean = mean(tempSingleMean,na.rm=T),
-              min = min(tempSingleMinimum,na.rm=T),
-              max = max(tempSingleMaximum,na.rm=T),
-              var = max(tempSingleVariance,na.rm=T),
-              expuncert = max(tempSingleExpUncert,na.rm=T),
-              meanstderr = max(tempSingleStdErMean,na.rm=T)) 
+    summarize(midday_mean = mean(tempSingleMean,na.rm=T),
+              midday_min = min(tempSingleMinimum,na.rm=T),
+              midday_max = max(tempSingleMaximum,na.rm=T),
+              midday_var = max(tempSingleVariance,na.rm=T),
+              midday_expuncert = max(tempSingleExpUncert,na.rm=T),
+              midday_meanstderr = max(tempSingleStdErMean,na.rm=T)) 
   
-  output_temp$mean[is.nan(output_temp$mean)]<-NA
-  output_temp$min[is.na(output_temp$mean)]<-NA
-  output_temp$max[is.na(output_temp$mean)]<-NA
-  output_temp$var[is.na(output_temp$mean)]<-NA
-  output_temp$expuncert[is.na(output_temp$mean)]<-NA
-  output_temp$meanstderr[is.na(output_temp$mean)]<-NA
+  midday_temp$midday_mean[is.nan(midday_temp$midday_mean)]<-NA
+  midday_temp$midday_min[is.na(midday_temp$midday_mean)]<-NA
+  midday_temp$midday_max[is.na(midday_temp$midday_mean)]<-NA
+  midday_temp$midday_var[is.na(midday_temp$midday_mean)]<-NA
+  midday_temp$midday_expuncert[is.na(midday_temp$midday_mean)]<-NA
+  midday_temp$midday_meanstderr[is.na(midday_temp$midday_mean)]<-NA
+  
+  output_temp <- merge(daily_temp,midday_temp)
   
   all_temp <- rbind(all_temp,output_temp)
-  rm(tmp_temp,tmp_temp2,output_temp)
+  rm(tmp_temp,tmp_temp2,midday_temp)
   
 }
 
-write_csv(all_temp,"data/drivers/neon/temperature.csv")
-ggplot(all_temp,aes(x=date,y=mean))+
+write_csv(all_temp,"data/drivers/neon/temps_allsites.csv")
+ggplot(all_temp,aes(x=date,y=daily_mean))+
   geom_point(aes(color=siteID))+
   facet_wrap(~siteID)
 
