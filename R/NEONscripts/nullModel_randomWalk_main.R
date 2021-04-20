@@ -4,19 +4,20 @@ library("ncdf4")
 library("tidybayes")
 library("tidyverse")
 
-# source("R/NEONscripts/randomWalkNullModelFunction.R")
+rm(list=ls())
+source("R/NEONscripts/randomWalkNullModelFunction.R")
 ###Random WalkNull Model Calculations
 ####Note: Currently this is not set up to run iteratively because I am not sure how the challenge is planning on doing this.
 ####Note (continued): Hopefully someone who knows about how this will be done can use this code to do that
-rm(list=ls())
+
 generate_plots <- TRUE
-team_name <- "TEST"
+team_name <- "EFInull"
 
 download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz",
               "phenology-targets.csv.gz")
 
 phenoDat <- read.csv("phenology-targets.csv.gz",header=TRUE) %>% 
-  filter(siteID=='GRSM')
+  filter(time<="2021-03-01")
 sites <- unique(as.character(phenoDat$siteID))
 
 forecast_length <- 35
@@ -53,6 +54,8 @@ for(s in 1:length(sites)){
   
   forecast_length <- 35
   
+  
+  
   sitePhenoDat <- phenoDat[phenoDat$siteID==sites[s],]
   sitePhenoDat$time <- lubridate::as_date(sitePhenoDat$time)
   
@@ -72,8 +75,8 @@ for(s in 1:length(sites)){
   
   #gap fill the missing precisions by assigning them the average sd for the site
   d$p.sd[!is.finite(d$p.sd)] <- NA
-  d$p.sd[is.na(d$p.sd)] <- mean(d$p.sd,na.rm=TRUE) # Fill in NA values with the mean sd
-  d$p.sd[d$p.sd == 0.0] <- min(d$p.sd[d$p.sd != 0.0]) 
+  d$p.sd[is.na(d$p.sd)] <- mean(d$p.sd,na.rm=TRUE)
+  d$p.sd[d$p.sd == 0.0] <- min(d$p.sd[d$p.sd != 0.0])
   d$N <- length(d$p)
   data <- list(y = d$p,
                sd_obs = d$p.sd,
