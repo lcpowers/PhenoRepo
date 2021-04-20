@@ -7,7 +7,6 @@
 ##' @export
 ##' @import rjags
 ##' @import coda
-
 randomWalkPhenoModel <- function(data,nchain,priorCal=FALSE){
   ##Set priors
   if(typeof(priorCal)==typeof(FALSE)){ ##Done when there was not a calibration period performed separately (or if this is the calibration)
@@ -19,22 +18,19 @@ randomWalkPhenoModel <- function(data,nchain,priorCal=FALSE){
     #data$s2.PC <- 50.50505 ##From mean <- 1/(0.2**2) and var = (mean-1/((0.4/1.96)**2))/2
   }
   
-  ###JAGS model - model specification
+  ###JAGS model
   RandomWalk = "
   model{
   
   #### Data Models
   for(i in 1:N){
-    p[i] ~ dnorm(x=x[i], mean=p.prec[i]) # Observation error term, prec. perhaps stands for precision?
+    p[i] ~ dnorm(x[i],p.prec[i])
   }
   
   #### Process Model
   for(i in 2:N){
-  
-    xl[i]~dnorm(x[i-1],p.proc) # random walk term
-    # max to keep from being zero?
+    xl[i]~dnorm(x[i-1],p.proc)
     x[i] <- max(0, min(1,xl[i]))
-  
   }
   
   #### Priors
