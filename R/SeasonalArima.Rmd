@@ -121,7 +121,7 @@ for(s in 1:length(sites)){
   }
 
 all_data <- rbind(full_data[,1:4],all_forecast) %>% arrange(siteID,time)
-save(list=ls(all.names=T),file="R/ARIMA_20210301.Rdata")
+save(list=ls(all.names=T),file=paste0("R/ARIMA_",Sys.Date(),".Rdata"))
 ```
 
 ```{r}
@@ -150,7 +150,6 @@ for(s in 1:length(sites)){
 
 Scoring
 ```{r scoring}
-example <- readr::read_csv("https://data.ecoforecast.org/forecasts/phenology/phenology-2021-02-23-UCSC_P_EDM.csv")
 
 score_df <- melt(all_forecast,id.vars = c("time","siteID"),
                  variable.name = "statistic",
@@ -158,18 +157,18 @@ score_df <- melt(all_forecast,id.vars = c("time","siteID"),
   mutate(forecast=1,
          obs_flag=2,
          data_assimilation=0) %>% 
-  select(time,siteID,obs_flag,forecast,data_assimilation,statistic,gcc_90) %>% 
-  as_tibble()
+  select(time,siteID,obs_flag,forecast,data_assimilation,statistic,gcc_90) 
 
 # replace gcc_90 and gcc_sd with mean and sd, resp. 
 score_df$statistic <- ifelse(score_df$statistic=="gcc_90","mean","sd")
 score_df$statistic <- as.character(score_df$statistic)
+write_csv(score_df,paste0("R/score_dfs/SArima_4cast_",Sys.Date(),".csv"))
 
 # class(score_df) <- class(example) # Didn't work
 
 # This only seems to work when we want to score relative to PhenoCam data that has already been observed
 scores <- neon4cast::score(score_df,theme=c("phenology"))
-
+write_csv(scores,paste0("R/score_dfs/SArima_scores_",Sys.Date(),".csv"))
 ```
 
 
