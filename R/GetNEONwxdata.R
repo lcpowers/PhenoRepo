@@ -43,7 +43,8 @@ for(site in sites){
   # 
   Precip <- loadByProduct(dpID="DP1.00006.001",
                           site=site,
-                          startdate=start_date,
+                          #startdate=start_date,
+                          startdate=as.character(Sys.Date()-2),
                           package="basic",
                           check.size=F)
   primary_precip <- Precip$PRIPRE_30min
