@@ -24,17 +24,17 @@ basetemps <- read_csv("data/site_basetemps.csv")
 #   facet_wrap(~siteID,scales='free')+
 #   theme_classic()
 
-# xy plot of temperature values
-ggplot(temp_df,aes(x=date,y=midday_mean))+
-  geom_point(size=0.4)+
-  facet_wrap(~siteID)+
-  theme_classic()
-
-# xy plot of temp on DOYs
-ggplot(temp_df,aes(x=date,y=daily_mean))+
-  geom_point(size=0.4)+
-  facet_wrap(~siteID)+
-  theme_classic()
+# # xy plot of temperature values
+# ggplot(temp_df,aes(x=date,y=midday_mean))+
+#   geom_point(size=0.4)+
+#   facet_wrap(~siteID)+
+#   theme_classic()
+# 
+# # xy plot of temp on DOYs
+# ggplot(temp_df,aes(x=date,y=daily_mean))+
+#   geom_point(size=0.4)+
+#   facet_wrap(~siteID)+
+#   theme_classic()
 
 gdd_fun <- function(tmin,tmax,tbase){
   
@@ -67,12 +67,12 @@ for(site in sites){
     GDDtotal <- diffinv(year_df$GDDdaily,lag = 1)
     year_df <- year_df %>% 
       dplyr::mutate(GDDtotal = GDDtotal[2:length(GDDtotal)],
-                    GDDlogic = ifelse(year_df$GDDdaily>0,1,0),
+                    GDDyesno = ifelse(year_df$GDDdaily>0,1,0),
                     GDDdays = rep(NA,nrow(.)),
                     base_temp = rep(base_temp,nrow(year_df)))
 
     for(rowi in 1:nrow(year_df)){
-      year_df$GDDdays[rowi]<-sum(year_df$GDDlogic[1:rowi])
+      year_df$GDDdays[rowi]<-sum(year_df$GDDyesno[1:rowi])
     }
 
     
@@ -82,7 +82,8 @@ for(site in sites){
   }
   
   output_df <- output_df %>% 
-    mutate(MovAvg_GDDdaily = c(rep(NA,window_size-1),round(rollmean(GDDdaily,k=7),6)))
+    mutate(MovAvg_GDDdaily = c(rep(NA,window_size-1),round(rollmean(GDDdaily,k=window_size),6)),
+           MovAvg_GDDyesno = c(rep(NA,window_size-1),round(rollmean(GDDyesno,k=window_size),6)))
   gdd_df <- rbind(gdd_df,output_df)
  # rm(site_df,year,site,GDDtotal)
 }
@@ -96,9 +97,15 @@ ggplot(all_df,aes(x=date,y=MovAvg_GDDdaily))+
   geom_point()+
   theme_classic()
 
-ggplot(all_df,aes(x=MovAvg_GDDdaily,y=gcc_90))+
-  geom_point()+
-  theme_classic()
+ggplot(all_df,aes(y=MovAvg_GDDdaily,x=doy))+
+  geom_point(aes(color=siteID))+
+  theme_classic()+
+  facet_wrap(~siteID)
+
+ggplot(all_df,aes(y=MovAvg_GDDyesno,x=doy))+
+  geom_point(aes(color=siteID))+
+  theme_classic()+
+  facet_wrap(~siteID)
 
 ggplot(all_df,aes(x=MovAvg_GDDdaily,y=gcc_90))+
   geom_point()+
