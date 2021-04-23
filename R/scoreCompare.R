@@ -33,18 +33,22 @@ sd_obs <- sd(caseymod$model_results)
 
 simdat <- rnorm(length(caseymod$model_results),log(caseymod$model_results/(1-caseymod$model_results)), sd_obs)
 simdat <- exp(simdat) / (1 + exp(simdat))
-# plot(x,caseymod$gcc_90,type="l")
-# points(x,simdat,col="green")
-caseymod$gcc_sd <- simdat/50
+plot(x,caseymod$model_results,type="l",ylim=c(0,1))
+points(x,simdat/50,col="green")
+
+##### THIS SD ####
+caseymod$gcc_sd <- simdat
+
+
 # plot(x,caseymod$gcc_90,type="l",ylim=c(0,0.5))
 # points(x,caseymod$gcc_sd,col="green")
 
 
 # Check measurement error in plot
-# ggplot(caseymod,aes(x=time))+
-#   geom_line(aes(y=gcc_90))+
-#   geom_point(aes(y=gcc_sd))+
-#   theme_classic()
+ggplot(caseymod,aes(x=time))+
+  geom_line(aes(y=gcc_90))+
+  geom_point(aes(y=gcc_sd))+
+  theme_classic()
 
 casey_scoredf <- caseymod %>% 
   melt(id.vars = c("time","siteID"),
@@ -70,7 +74,7 @@ score_plot <- melt(all_scores,id.vars = c('time','siteID','target'),variable.nam
 
 ggplot(score_plot, aes(x=time,y=score))+
   geom_line(aes(color=source))+
-  scale_y_continuous(limits=c(0,0.02))+
+  # scale_y_continuous(limits=c(0,0.02))+
   scale_x_date(breaks="1 week")+
   theme_classic()
 
