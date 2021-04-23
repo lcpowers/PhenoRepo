@@ -7,21 +7,35 @@ source(here("R/gridsearch_Casey.R")) #for gridsearch() function
 source("R/PhenoModel.R")
 source("R/LinPhenoMod.R")
 
-# Read and format target data
+# NOTICE: Need datasets to start on same first day!!! 
+# Change this between sites
+dayOne = as.Date("01-01-18","%m-%d-%y")  # First day with both data sets
+
+
+# Read and format target data  -------------------------------------------------
 targets <- read.csv(file = 'data/pheno/GRSM/GRSM_gccTargets.csv') %>% 
-  select(1,3) %>% 
-  filter(!is.na(gcc_90))
-targets$time <- as.Date(targets$time)
+  select(1,3) %>%  # Only keep GCC and date
+  filter(!is.na(gcc_90))  # Remove NA's
+targets$time <- as.Date(targets$time)  # Convert to date format
 
-dayOne = as.Date("01-01-17","%m-%d-%y")
-targets$day <- as.numeric(targets$time - dayOne) %% 365 + 1
+targets <- targets %>% filter(time >= dayOne)  # Remove prior dates
+targets$day <- as.numeric(targets$time - dayOne) %% 365 + 1  # Day of the year
 
 
-# Sum of Squares Function
+# Read in GDD data  ------------------------------------------------------------
+GDD <- read.csv(file = 'data/drivers/neon/GDDandtemp_allsites.csv') %>%
+  filter(siteID == 'GRSM') %>%  # Only consider GRSM site
+  filter(date >= dayOne)
+
+
+## Data fitting process --------------------------------------------------------
+
+# Sum of Squares Function - used to measure error
 ssq_phenmod <- function(p,y,x) {
   #In the next line we refer to the parameters in p by name so that the code
   #is self documenting
-  y_pred <- PhenoModel(x,G_init=p[1],a=p[2],b=p[3],c=p[4],d=p[5]) #predicted y
+  y_pred <- PhenoModel(t,gdd,total_days,rolling_avg,G_init,a=p[1],b=p[2],c=p[3],d=p[4],
+                       t1=p[5],t2=p[6],t3=p[7],t4=p[8]) #predicted y
   e <- y - y_pred #observed minus predicted y
   ssq <- sum(e^2)
   return(ssq)
@@ -29,25 +43,32 @@ ssq_phenmod <- function(p,y,x) {
 
 
 # Grid Search
+  # used to find general parameter area
+  # very slow for multiple parameters - scales exponentially 
 
 # list of parameter ranges
-pvecs <- list(G_init=seq(0,1,length.out=10),
-              a=seq(0,0.1,length.out=10),
-              b=seq(0,0.1,length.out=10),
-              c=seq(0,0.1,length.out=10),
-              d=seq(0,0.1,length.out=10))
+pvecs <- list(a=seq(0,0.01,length.out=10),   # green-up: fast growth
+              b=seq(0,0.001,length.out=10),  # maturation
+              c=seq(0,0.01,length.out=10),   # senescence: fast growth
+              d=seq(0,0.001,length.out=10),  # dormancy
+              t1=seq(30,70,length.out=10),   # GDDdays fit
+              t2=seq(50,100,length.out=10),   # GDDdays fit
+              t3=seq(240,270,length.out=10),   # GDDdays fit
+              t4=seq(0,10,length.out=10))   # GDDrollingAvg fit
 
-fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, x=targets$day)
+# Feed in parameter list, ssq function, target data, input data
+fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, x=targets$day, mon=10,
+                  gdd = GDD$GDDdaily, total_days = GDD$GDDdays, 
+                  rolling_avg = GDD$MovAvg_GDDdaily, G_init = targets$gcc_90[1])
 
+# Grid Search Results
 fit$par    # best parameter value found by fit function
 fit$value  # lowest SSQ found by fit function
 
-par(mfrow=c(1,2))
-plot(funcvals~G_init,data=fit$profile)
-plot(funcvals~a,data=fit$profile)
 
-
+## Finish data fitting using optim function ------------------------------------
 # Nelder - Mead Algorithm
+# Initialize guesses with Grid Search Results
 starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["c"],fit$par["d"])
 
 fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, x=targets$day)

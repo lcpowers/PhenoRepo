@@ -1,15 +1,24 @@
 # Phenology Model - NEON Challenge
 
-PhenoModel <- function(x,G_init,a,b,c,d) {
+# Input parameters:
+  # t = day of year
+  # gdd = daily growing degree day value
+  # total_days = Accumulated number of growing degree days
+  # rolling_avg = 7 day avg GDD 
+  # G_init = Initial green value
+  # a, b, c, d = growth and death rates (fit)
+  # t1, t2, t3, t4 = Timing thresholds (fit)
+
+PhenoModel <- function(t,gdd,total_days,rolling_avg,G_init,a,b,c,d,t1,t2,t3,t4) {
   
-  n <- length(x)
+  n <- length(t)
   
   # Parameters
-  beta <- a * x * (x > 100 & x <= 130) +
-    d * (x > 310 | x <= 100)
+  beta <- a * gdd * (total_days > t1 & total_days <= t2) +          # Green up
+    d * ((rolling_avg < t4 & total_days > t3) | total_days <= t1)   # Dormancy
   
-  delta <- b * (x > 130 & x <= 290) +
-    c * x * (x > 290 & x <= 310)
+  delta <- b * (total_days > t2 & total_days <= t3) +               # Leaf Maturation
+    c * (total_days > t3 & rolling_avg > t4)                        # Senescence
   
   # Create Vectors
   G <- rep(0,n)
@@ -29,25 +38,3 @@ PhenoModel <- function(x,G_init,a,b,c,d) {
   return(G)
   
 }
-
-
-# Run model
-
-x <- 1:364
-G_init <- 0.2
-a <- 0.1
-b <- 0.1
-c <- 0.1
-
-out <- PhenoModel(x,G_init,a,b,c)
-
-plot(x,out$G,ylim=c(0,1),type="l",col="green")
-
-# Add some observation error
-# Suggest logit scale with Normal distribution for error
-sd_obs <- 0.4
-simdat <- rnorm(length(out$G),log(out$G/(1-out$G)),sd_obs)
-simdat <- exp(simdat) / (1 + exp(simdat))
-
-points(x,simdat,col="green")
-
