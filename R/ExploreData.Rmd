@@ -24,6 +24,7 @@ library(viridis)
 library(RColorBrewer)
 library(ggfortify)
 library(pals)
+library(lubridate)
 ```
 
 
@@ -44,29 +45,40 @@ rm(list=ls())
 # setwd("/home/claire/Git/PhenoRepo/")
 
 site <- "GRSM"
+sites <- c("HARV", "BART", "SCBI", "STEI", "UKFS", "GRSM", "DELA", "CLBJ")
 
 # Individual data--data for every image taken
-ind_data <- read_csv(paste0("data/",site,"/",site,"_individual.csv"))
+ind_data <- read_csv(paste0("data/pheno/",site,"/",site,"_individual.csv"))
 ind_data <- ind_data[,colSums(is.na(ind_data))<nrow(ind_data)]
 # head(ind_data)
 # summary(ind_data)
 
 # Daily data--data for images aggregated by day
-daily_data <- read_csv(paste0("data/",site,"/",site,"_daily.csv")) %>% 
-  filter(image_count>0)
+daily_data <- NULL
+for(site in sites){
+  
+  tmp <- read_csv(paste0("data/pheno/",site,"/",site,"_daily.csv")) %>% 
+    filter(image_count>0)
+  
+  daily_data <- rbind(daily_data,tmp)
+}
+
+
+
+
 daily_data <- daily_data[,colSums(is.na(daily_data))<nrow(daily_data)]
 # head(daily_data)
 # summary(daily_data)
 
 # GDD data -- response variable
-gcc_data <- read_csv(paste0("data/",site,"/",site,"_gccTargets.csv"))
+gcc_data <- read_csv(paste0("data/pheno/",site,"/",site,"_gccTargets.csv"))
 # head(gcc_data)
 # summary(gcc_data)
 
 gcol <- 'springgreen4'
 rcol <- 'sienna3'
 bcol <- 'dodgerblue3'
-doy_pal <- colorRampPalette(kovesi.cyclic_mrybm_35_75_c68(366))(366)
+#doy_pal <- colorRampPalette(kovesi.cyclic_mrybm_35_75_c68(366))(366)
 ```
 
 **Individual data -- looking at time series plots of data for individual photos**
@@ -315,3 +327,195 @@ ggplot(PCs12_df,aes(x=PC1,y=gcc_90))+
 
 
 https://www.sciencedirect.com/science/article/pii/S0378112716302298
+
+```{r}
+targets <- read_csv("phenology-targets.csv.gz") %>% 
+  mutate(doy = yday(targets$time),
+         year=str_sub(time,1,4))
+
+siteinfo <- read_csv("data/pheno/siteinfo.csv")
+
+temp <- read_csv("./data/drivers/neon/GDDandtemp_allsites.csv") %>% 
+  select(date,siteID,daily_mean,midday_mean,GDDdaily,GDDdays,GDDlogic,GDDtotal) 
+daily_data$siteID <- str_sub(daily_data$midday_filename,10,13)
+df <- base::merge(daily_data,temp,by.x=c("date","siteID"),by.y = c("date","siteID"))
+
+# create DF with lagged GDD daily
+lag_df <- NULL
+lag<-15
+for(site in sites){
+  
+  tmp <- filter(df,siteID==site)
+  GDDdaily_lag = c(tmp$GDDdaily[1:(nrow(tmp)-lag)])
+  tmp2 <- cbind(tmp[(lag+1):nrow(tmp),],GDDdaily_lag)
+  lag_df <- rbind(lag_df,tmp2)
+  }
+
+summary(lm(gcc_90~GDDdaily,df))
+summary(lm(gcc_90~GDDdaily_lag,lag_df))
+
+ggplot(df,aes(x=GDDtotal,y=gcc_90))+
+  geom_point()+
+  facet_wrap(~siteID)+
+  geom_smooth()+
+  theme_classic()
+
+ggplot(df,aes(x=GDDdaily,y=gcc_90))+
+  geom_point()+
+  facet_wrap(~siteID)+
+  geom_smooth(method="lm")+
+  theme_classic()
+
+ggplot(df,aes(x=doy,y=gcc_90))+
+  geom_point(aes(color=doy))+
+  facet_wrap(~siteID)+
+  geom_smooth()+
+  theme_classic()
+
+site = "GRSM"
+ginc <- siteinfo$field_avg_grean_increase_doy[siteinfo$siteID==site]
+gdec <- siteinfo$field_avg_green_decrease_doy[siteinfo$siteID==site]
+gmax <- siteinfo$field_avg_green_max_doy[siteinfo$siteID==site]
+gmin <- siteinfo$field_avg_green_min_doy[siteinfo$siteID==site]
+gndays <- siteinfo$field_avg_number_of_green_days[siteinfo$siteID==site]
+gcc_min <- min(targets$gcc_90[targets$siteID==site],na.rm=T)-0.01
+gcc_max <- max(targets$gcc_90[targets$siteID==site],na.rm=T)+0.01
+
+ggplot(subset(targets,siteID==site), aes(x=doy,y=gcc_90))+
+  geom_rect(aes(xmin=ginc,xmax=ginc+gndays,ymin=gcc_min,ymax=gcc_max),fill='grey90',alpha=0.25)+
+  geom_point(aes(color=year))+
+  geom_smooth()+
+  geom_vline(xintercept = ginc,color='green')+
+  geom_text(aes(x=ginc, label="green increase DOY", y=gcc_max), angle=90, vjust=0,hjust=1)+ 
+  geom_vline(xintercept = gmax,color='forestgreen')+ # This shows that the windy year really skews this value at GRSM
+  geom_text(aes(x=gmax, label="green max DOY", y=gcc_max), angle=90, vjust=0,hjust=1)+ 
+  geom_vline(xintercept = gdec,color='darkgreen')+ 
+  geom_text(aes(x=gdec, label="green decrease DOY", y=gcc_max), angle=90, vjust=0,hjust=1)+ 
+  geom_vline(xintercept = gmin,color='indianred4')+
+  geom_text(aes(x=gmin, label="green min DOY", y=gcc_max), angle=90, vjust=0,hjust=1)+ 
+  scale_y_continuous(expand=c(0,0))+
+  ggtitle("Figure to show example DOY values in siteinfo.csv")+
+  theme_classic()
+ggsave("data/pheno/siteinfo_doyvals_ex.png")
+```
+
+```{r}
+rm(list=ls())
+
+targets <- read_csv("phenology-targets.csv.gz") 
+
+targets <- targets %>% 
+  mutate(doy = yday(targets$time),
+         year=str_sub(time,1,4))
+
+siteinfo <- read_csv("data/pheno/siteinfo.csv")
+temp <- read_csv("data/drivers/neon/GDDandtemp_allsites.csv")
+colnames(temp)[1]<-"time"
+
+df <- merge(temp,targets)
+
+ggplot(subset(targets,siteID=="GRSM"), aes(x=doy,y=gcc_90))+
+  geom_vline(xintercept=80,color="grey70",linetype=3,size=0.9)+
+  geom_vline(xintercept=172,color="grey70",linetype=3,size=0.9)+
+  geom_vline(xintercept=264,color="grey70",linetype=3,size=0.9)+
+  geom_vline(xintercept=355,color="grey70",linetype=3,size=0.9)+
+  geom_point(size=3,alpha=0.5,color="springgreen4")+
+  labs(x="Day of year",y="GCC 90")+
+  scale_x_continuous(expand=c(0.01,0))+
+  theme_classic(base_size = 15)
+ggsave("gccdataexample.png",width=10,height=5,dpi = 400)
+
+colnames(temp)[1]<-"time"
+  
+ggplot(df, aes(x=gcc_90,y=,midday_mean))+
+  geom_point(aes(color=siteID),alpha=0.5)+
+  labs(x="GCC 90",y="Daily mean temperature",color="Site ID")+
+  geom_smooth(method="lm")+
+  scale_y_continuous(limits = c(0,30),expand=c(0,0))+
+  theme_classic(base_size = 20)
+
+ggplot(df,aes(x=gcc_90,y=GDDdaily))+
+  geom_point(aes(color=siteID),alpha=0.5)+
+  labs(x="GCC 90",y="GDD Daily",color="Site ID")+
+  geom_smooth(method="lm")+
+  facet_wrap(~siteID)
+  theme_classic(base_size = 20)
+
+ggplot(df,aes(x=GDDdaily,y=gcc_90))+
+  geom_point(aes(color=siteID),alpha=0.5)+
+  labs(x="GCC 90",y="GDD Daily",color="Site ID")+
+  theme_classic(base_size = 20)
+
+ggplot(df,aes(x=gcc_90,y=GDDtotal))+
+  geom_point(aes(color=siteID),alpha=0.5)+
+  labs(x="GCC 90",y="GDD Daily",color="Site ID")+
+  theme_classic(base_size = 20)
+
+ggplot(df,aes(x=gcc_90,y=GDDdays))+
+  geom_point(aes(color=siteID),alpha=0.5)+
+  labs(x="GCC 90",y="GDD Daily",color="Site ID")+
+  theme_classic(base_size = 20)
+
+trendline(df$daily_mean,df$gcc_90)
+trendline(df$GDDdaily,df$gcc_90)
+
+
+summary(lm(gcc_90~GDDdaily,df))
+```
+
+
+
+
+
+
+```{r}
+pca_df <- df[, unlist(lapply(df, is.numeric))] %>% 
+  filter(complete.cases(.)) %>% 
+  select(gcc_90,gcc_sd,doy,GDDdaily,midday_mean,daily_mean,year)
+  
+corrplot(cor(pca_df), method = c("number"), type = 'upper',add=T)
+
+pca_res <- prcomp(pca_df, scale. = TRUE)
+
+autoplot(pca_res, data = pca_df,
+         loadings = TRUE, loadings.label=TRUE,
+         loadings.colour='grey50',loadings.label.colour='darkred',
+         loadings.label.size = 5,alpha = 0.75)+
+  theme_classic()+
+  scale_color_viridis(option = "D")
+
+PCs <- as.data.frame(pca_res$x)
+PC_df <- cbind(PC1=PCs$PC1,PC2=PCs$PC2, df)
+
+trendline(PC_df$PC1,PC_df$log_max_ls)
+ggplot(PC_df,aes(x=PC1,y=log_max_ls))+
+  geom_point()+
+  #scale_color_viridis()+
+  geom_smooth(method="lm",se=T)+
+  # geom_label(aes(label=species))+
+  theme_classic(base_size=20)+
+  # geom_text(aes(x=-1.8,y=8,label="y = 0.707x + 2.660"),size=8)+
+  # geom_text(aes(x=-2.1,y=7.5,label="R^2=0.704, p<0.0001"),size=5.5)+
+  labs(x="PC1 (27.6%)", y = "Log(maximum lifespan)")
+
+```
+
+
+###### PRESENTATION FIGURE CODE #######
+```{r prezFigCode}
+ggplot(subset(targets,siteID=="GRSM"), aes(x=doy,y=gcc_90))+
+  geom_vline(xintercept=80,color="grey70",linetype=3,size=0.9)+
+  geom_vline(xintercept=172,color="grey70",linetype=3,size=0.9)+
+  geom_vline(xintercept=264,color="grey70",linetype=3,size=0.9)+
+  geom_vline(xintercept=355,color="grey70",linetype=3,size=0.9)+
+  geom_point(size=3,alpha=0.5,color="springgreen4")+
+  labs(x="Day of year",y="GCC 90")+
+  scale_x_continuous(expand=c(0.01,0))+
+  theme_classic(base_size = 15)
+ggsave("gccdataexample.png",width=10,height=5,dpi = 400)
+
+```
+
+
+
+
