@@ -9,9 +9,12 @@
   # a, b, c, d = growth and death rates (fit)
   # t1, t2, t3, t4 = Timing thresholds (fit)
 
-PhenoModel <- function(t,gdd,total_days,rolling_avg,G_init,a,b,c,d,t1,t2,t3,t4) {
-  
-  n <- length(t)
+PhenoModel <- function(GDD,G_init,a,b,c,d,t1,t2,t3,t4) {
+
+  gdd = GDD$gdd
+  total_days = GDD$total_days
+  rolling_avg = GDD$rolling_avg
+  n <- length(gdd)
   
   # Parameters
   beta <- a * gdd * (total_days > t1 & total_days <= t2) +          # Green up

@@ -23,7 +23,7 @@
 # Brett Melbourne
 # 18 Nov 15
 #
-gridsearch <- function( pvecs, func, mon=10, ... ) {
+gridsearch <- function( pvecs, func, mon=10, ...) {
   
   if ( class(pvecs) != "list" ) {
     stop("pvecs must be a list")
