@@ -11,9 +11,9 @@
 
 PhenoModel <- function(GDD,G_init,a,b,c,d,t1,t2,t3,t4) {
 
-  gdd = GDD$gdd
-  total_days = GDD$total_days
-  rolling_avg = GDD$rolling_avg
+  gdd = GDD$GDDdaily
+  total_days = GDD$GDDdays
+  rolling_avg = GDD$MovAvg_GDDdaily
   n <- length(gdd)
   
   # Parameters

@@ -52,11 +52,13 @@ pvecs <- list(a=seq(0,0.01,length.out=10),   # green-up: fast growth
               c=seq(0,0.01,length.out=10),   # senescence: fast growth
               d=seq(0,0.001,length.out=10),  # dormancy
               t1=seq(30,70,length.out=10),   # GDDdays fit
-              t2=seq(50,100,length.out=10),   # GDDdays fit
-              t3=seq(240,270,length.out=10),   # GDDdays fit
-              t4=seq(0,10,length.out=10))   # GDDrollingAvg fit
+              t2=seq(50,100,length.out=10),  # GDDdays fit
+              t3=seq(240,270,length.out=10), # GDDdays fit
+              t4=seq(0,10,length.out=10))    # GDDrollingAvg fit
 
 # Feed in parameter list, ssq function, target data, input data
+fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD, 
+                  G_init = targets$gcc_90[1])
 
 # Grid Search Results
 fit$par    # best parameter value found by fit function
@@ -66,11 +68,13 @@ fit$value  # lowest SSQ found by fit function
 ## Finish data fitting using optim function ------------------------------------
 # Nelder - Mead Algorithm
 # Initialize guesses with Grid Search Results
-starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["c"],fit$par["d"])
+starts <- c(fit$par["a"],fit$par["b"],fit$par["c"],fit$par["d"],
+            fit$par["t1"],fit$par["t2"],fit$par["t3"],fit$par["t4"])
 
-fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, x=targets$day)
+fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD, 
+              G_init = targets$gcc_90[1])
 fit
-save.image(paste0("R/gridsearch_",Sys.Date(),".RData")) # Save data frame 
+save.image(paste0("R/optimized_",Sys.Date(),".RData")) # Save data frame 
 
 
 # Plot model results against data to test accuracy  -----------------------------
@@ -83,11 +87,31 @@ c <- 2.806884e-05
 d <- 1.750219e-04
 
 model_results <-  as.data.frame(PhenoModel(targets$day,G_init,a,b,c,d))
-colnames(model_results)[1] <- "model_results"
+colnames(model_results)[1] <- "gcc_90"
 
 ggplot() +
   geom_point(data = targets, aes(x = time, y = gcc_90), color = "green") +
-  geom_line(aes(x = targets$time, y = model_results$model_results)) +
+  geom_line(aes(x = targets$time, y = model_results$gcc_90)) +
+  theme_classic()
+
+
+# GDD Model Results
+G_init = targets$gcc_90[1]
+a = fit$par["a"]
+b = fit$par["b"]
+c = fit$par["c"]
+d = fit$par["d"]
+t1 = fit$par["t1"]
+t2 = fit$par["t2"]
+t3 = fit$par["t3"]
+t4 = fit$par["t4"]
+
+model_results <-  as.data.frame(PhenoModel(GDD,G_init,a,b,c,d,t1,t2,t3,t4))
+colnames(model_results)[1] <- "gcc_90"
+
+ggplot() +
+  geom_point(data = targets, aes(x = time, y = gcc_90), color = "green") +
+  geom_line(aes(x = as.Date(GDD$date), y = model_results$gcc_90)) +
   theme_classic()
 
 
