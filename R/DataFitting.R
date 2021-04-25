@@ -31,10 +31,10 @@ GDD <- read.csv(file = 'data/drivers/neon/GDDandtemp_allsites.csv') %>%
 ## Data fitting process --------------------------------------------------------
 
 # Sum of Squares Function - used to measure error
-ssq_phenmod <- function(p,y,x) {
+ssq_phenmod <- function(p,y,GDD,G_init) {
   #In the next line we refer to the parameters in p by name so that the code
   #is self documenting
-  y_pred <- PhenoModel(t,gdd,total_days,rolling_avg,G_init,a=p[1],b=p[2],c=p[3],d=p[4],
+  y_pred <- PhenoModel(GDD,G_init,a=p[1],b=p[2],c=p[3],d=p[4],
                        t1=p[5],t2=p[6],t3=p[7],t4=p[8]) #predicted y
   e <- y - y_pred #observed minus predicted y
   ssq <- sum(e^2)
@@ -57,9 +57,6 @@ pvecs <- list(a=seq(0,0.01,length.out=10),   # green-up: fast growth
               t4=seq(0,10,length.out=10))   # GDDrollingAvg fit
 
 # Feed in parameter list, ssq function, target data, input data
-fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, x=targets$day, mon=10,
-                  gdd = GDD$GDDdaily, total_days = GDD$GDDdays, 
-                  rolling_avg = GDD$MovAvg_GDDdaily, G_init = targets$gcc_90[1])
 
 # Grid Search Results
 fit$par    # best parameter value found by fit function
@@ -73,32 +70,18 @@ starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["c"],fit$par["d"
 
 fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, x=targets$day)
 fit
-save.image(paste0("R/gridsearch_",Sys.Date(),".RData"))
+save.image(paste0("R/gridsearch_",Sys.Date(),".RData")) # Save data frame 
 
 
-# Plot model results against data to test accuracy
+# Plot model results against data to test accuracy  -----------------------------
 
-# Model results - with linear growth and no d parameter
-G_init <- 0.3490258844
-a <- 0.0054031551
-b <- 0.0005266447
-c <- 0.0069854384
-
-model_results <-  as.data.frame(LinPhenoMod(targets$day,G_init,a,b,c))
-colnames(model_results)[1] <- "model_results"
-
-ggplot() +
-  geom_point(data = targets, aes(x = time, y = gcc_90), color = "green") +
-  geom_line(data = model_results, aes(x = targets$time, y = model_results)) +
-  theme_classic()
-
-
-# Model results - with exponential growth and medium gridsearch fit
+# Exponential model results
 G_init <- 3.494092e-01 # fit$par["G_init"]
 a <-  4.275827e-05 
 b <- 5.005463e-04 
 c <- 2.806884e-05
 d <- 1.750219e-04
+
 model_results <-  as.data.frame(PhenoModel(targets$day,G_init,a,b,c,d))
 colnames(model_results)[1] <- "model_results"
 
@@ -107,6 +90,9 @@ ggplot() +
   geom_line(aes(x = targets$time, y = model_results$model_results)) +
   theme_classic()
 
+
+
+# Write model results to file --------------------------------------------------
 model_data = cbind(targets, model_results)
 write.csv(model_data,'model_data.csv')
 
