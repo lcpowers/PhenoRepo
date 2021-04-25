@@ -1,7 +1,7 @@
 Tutorial on optimization
 ================
 Brett Melbourne
-16 Apr 2021
+16 Apr 2021 (updated 24 Apr 2021)
 
 ``` r
 library(here) #for easy management of file paths within the repository
@@ -17,7 +17,7 @@ From week 3 of my data science class:
   - Class notes:
   - <https://github.com/EBIO5460Fall2020/class-materials/blob/master/03_1_slides_optim_algos.pdf>
 
-## Example: fitting a linear model
+## Example: fitting a linear model with SSQ algorithm
 
 In the code below, I give an example that demonstrates using a grid
 search followed by the Nelder-Mead descent algorithm to find the minimum
@@ -275,3 +275,136 @@ anova(lmfit)
     ## Residuals 98  35560     363                      
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+## Maximum likelihood algorithm
+
+The minimizing SSQ algorithm gives a good intuition for the general idea
+of fitting a model to data by optimization. The general idea is to
+minimize the distance between the model predictions and the data. The
+parameter values that minimize the distance are the best fit. We can
+improve on this by switching out SSQ in the objective function for
+likelihood, which you can think of as a distance that is calibrated in
+terms of probability.
+
+### Likelihood for the Normal linear model
+
+The likelihood is the probability of the data given the model,
+![P(y|\\theta)](https://latex.codecogs.com/png.latex?P%28y%7C%5Ctheta%29
+"P(y|\\theta)"), where
+![\\theta](https://latex.codecogs.com/png.latex?%5Ctheta "\\theta")
+represents the parameters. In practice, we are also conditioning on any
+independent variables. The likelihood function for the Normal linear
+model is:
+
+  
+![P(y|\\theta) = P(y|\\beta\_0,\\beta\_1,\\sigma,x)
+=&#10;\\prod\_i^n\\frac{1}{\\sqrt{2\\pi\\sigma^2}}e^{-\\frac{1}{2}\\frac{(y\_i-\\beta\_0-\\beta\_1&#10;x\_i)}{\\sigma^2}}](https://latex.codecogs.com/png.latex?P%28y%7C%5Ctheta%29%20%3D%20P%28y%7C%5Cbeta_0%2C%5Cbeta_1%2C%5Csigma%2Cx%29%20%3D%0A%5Cprod_i%5En%5Cfrac%7B1%7D%7B%5Csqrt%7B2%5Cpi%5Csigma%5E2%7D%7De%5E%7B-%5Cfrac%7B1%7D%7B2%7D%5Cfrac%7B%28y_i-%5Cbeta_0-%5Cbeta_1%0Ax_i%29%7D%7B%5Csigma%5E2%7D%7D
+"P(y|\\theta) = P(y|\\beta_0,\\beta_1,\\sigma,x) =
+\\prod_i^n\\frac{1}{\\sqrt{2\\pi\\sigma^2}}e^{-\\frac{1}{2}\\frac{(y_i-\\beta_0-\\beta_1
+x_i)}{\\sigma^2}}")  
+
+where the RHS of the equation is the product of the probabilities of
+individual data points (assuming that each data point is independent).
+The equation inside the product operator is the probability density
+function (pdf) of the Normal distribution. To fit the model, we take the
+natural logarithm and change sign to get the **negative
+log-likelihood**, also known as the support function. This
+transformation is not conceptually necessary but it improves the
+accuracy and stability of the optimization algorithm: instead of
+multiplying tiny probabilities together it is more accurate and
+convenient to sum their logs. The optimization algorithm minimizes
+functions by default, so we take the negative.
+
+### Function definition for the likelihood objective function
+
+The R code for the negative log-likelihood of the linear model is:
+
+``` r
+lm_nll <- function(p,y,x) {
+    mu <- linmod(b_0=p[1],b_1=p[2],x) #call the linear model
+    nll <- -sum(dnorm(y,mean=mu,sd=p[3],log=TRUE)) #-1 * sum of log-likelihoods 
+    return(nll)
+}
+```
+
+Compared to the SSQ function, we’ve switched out the line of code for
+calculating the SSQ with a line that calculates the negative log
+likelihood. Also, the vector `p` now includes an additional parameter,
+the standard deviation of the Normal distribution. The first line inside
+the function calculates
+![\\mu\_i](https://latex.codecogs.com/png.latex?%5Cmu_i "\\mu_i"), the
+expected value of ![y\_i](https://latex.codecogs.com/png.latex?y_i
+"y_i"), by calling the linear model with the first two parameters of the
+parameter vector `p`, which are respectively
+![\\beta\_0](https://latex.codecogs.com/png.latex?%5Cbeta_0 "\\beta_0")
+and ![\\beta\_1](https://latex.codecogs.com/png.latex?%5Cbeta_1
+"\\beta_1"). The second line uses the pdf of the Normal distribution to
+calculate the log-likelihoods for each datapoint using the R function
+`dnorm()`. The log-likelihoods are then summed and made negative. Thus,
+this function returns the negative log-likelihood for a given set of
+parameters.
+
+For example, let’s try the model
+![\\beta\_0=70](https://latex.codecogs.com/png.latex?%5Cbeta_0%3D70
+"\\beta_0=70"),
+![\\beta\_1=8](https://latex.codecogs.com/png.latex?%5Cbeta_1%3D8
+"\\beta_1=8"), and
+![\\sigma=30](https://latex.codecogs.com/png.latex?%5Csigma%3D30
+"\\sigma=30") and get its negative log-likelihood:
+
+``` r
+p <- c(70,8,30)
+lm_nll(p,y=linear_data$y, x=linear_data$x)
+```
+
+    ## [1] 3391.726
+
+### Optimizing to find the maximum likelihood
+
+As for SSQ, we use grid search and/or Nelder-Mead to find the parameters
+that maximize the likelihood. In practice, we achieve this by finding
+the parameters that minimize the negative log-likelihood. Compared to
+SSQ, we’ve now got a third parameter,
+![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\\sigma"), to
+search over. We need a good place to start for
+![\\sigma](https://latex.codecogs.com/png.latex?%5Csigma "\\sigma"),
+which is about half the average range of the data in any slice through
+![x](https://latex.codecogs.com/png.latex?x "x"), so maybe about 50/2.
+Combining with reasonable starting values from before for the other two
+parameters:
+
+``` r
+starts <- c(194,-3,50/2)
+fitlm <- optim(p=starts,lm_nll,y=linear_data$y, x=linear_data$x)
+fitlm
+```
+
+    ## $par
+    ## [1] 195.008258  -3.326902  18.854708
+    ## 
+    ## $value
+    ## [1] 435.5842
+    ## 
+    ## $counts
+    ## function gradient 
+    ##      100       NA 
+    ## 
+    ## $convergence
+    ## [1] 0
+    ## 
+    ## $message
+    ## NULL
+
+The maximum likelihood estimates of the parameters are in `$par`:
+![\\beta\_0=195](https://latex.codecogs.com/png.latex?%5Cbeta_0%3D195
+"\\beta_0=195"),
+![\\beta\_1=-3.33](https://latex.codecogs.com/png.latex?%5Cbeta_1%3D-3.33
+"\\beta_1=-3.33"), and
+![\\sigma=18.9](https://latex.codecogs.com/png.latex?%5Csigma%3D18.9
+"\\sigma=18.9"). The negative log-likelihood of this model is in
+`$value`: 435.6. We can also see that the function was evaluated 100
+times, while the convergence code of 0 tells us that the Nelder-Mead
+algorithm converged to an optimum. There is not a guarantee that this is
+the global optimum and we would want to inspect a grid search and/or try
+a range of starting values to ensure that the likelihood surface is nice
+and basin shaped and that there is not a better optimum.
