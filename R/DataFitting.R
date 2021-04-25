@@ -77,6 +77,9 @@ fit
 save.image(paste0("R/optimized_",Sys.Date(),".RData")) # Save data frame 
 
 
+
+
+
 # Plot model results against data to test accuracy  -----------------------------
 
 # Exponential model results
@@ -86,14 +89,14 @@ b <- 5.005463e-04
 c <- 2.806884e-05
 d <- 1.750219e-04
 
-model_results <-  as.data.frame(PhenoModel(targets$day,G_init,a,b,c,d))
+model_results <-  as.data.frame(LinPhenoMod(targets$day,G_init,a,b,c,d))
 colnames(model_results)[1] <- "gcc_90"
 
 ggplot() +
-  geom_point(data = targets, aes(x = time, y = gcc_90), color = "green") +
+  geom_point(data = targets, aes(x = time, y = gcc_90), color = "springgreen4") +
   geom_line(aes(x = targets$time, y = model_results$gcc_90)) +
-  theme_classic()
-
+  labs(x="Day of year",y="GCC 90") +
+  theme_classic(base_size = 15)
 
 # GDD Model Results
 G_init = targets$gcc_90[1]
@@ -110,9 +113,10 @@ model_results <-  as.data.frame(PhenoModel(GDD,G_init,a,b,c,d,t1,t2,t3,t4))
 colnames(model_results)[1] <- "gcc_90"
 
 ggplot() +
-  geom_point(data = targets, aes(x = time, y = gcc_90), color = "green") +
+  geom_point(data = targets, aes(x = time, y = gcc_90), color = "springgreen4") +
   geom_line(aes(x = as.Date(GDD$date), y = model_results$gcc_90)) +
-  theme_classic()
+  labs(x="Day of year",y="GCC 90") +
+  theme_classic(base_size = 15)
 
 
 
