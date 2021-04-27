@@ -152,6 +152,7 @@ t4 = fit$par["t4"]
 
 model_results <-  PhenoModel(GDD,G_init,a,b,c,d,t1,t2,t3,t4)
 colnames(model_results)[2] <- "gcc_90"
+model_results$day <- yday(model_results$date)
 
 ggplot() +
   geom_point(data = targets, aes(x = time, y = gcc_90), color = "springgreen4") +

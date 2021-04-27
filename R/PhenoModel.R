@@ -24,20 +24,24 @@ PhenoModel <- function(GDD,G_init,a,b,c,d,t1,t2,t3,t4) {
     c * (total_days > t3 & rolling_avg > t4)                        # Senescence
   
   # Create Vectors
-  G <- rep(0,n)
-  N <- rep(0,n)
+  output_df <- data.frame(date = GDD$date,
+                          G = rep(NA,n),
+                          N = rep(NA,n))
+  # G <- rep(0,n)
+  # N <- rep(0,n)
   
   # Initial conditions
-  G[1] = G_init
-  N[1] = 1 - G_init
+  output_df$G[1] = G_init
+  output_df$N[1] = 1 - G_init
   
   # Model sim
   for ( i in 2:n ) {
     
-    G[i] = (1 - delta[i]) * G[i-1] + beta[i] * N[i-1]
-    N[i] = (1 - beta[i]) * N[i-1] + delta[i] * G[i-1]
+    output_df$G[i] = (1 - delta[i]) * output_df$G[i-1] + beta[i] * output_df$N[i-1]
+    output_df$N[i] = (1 - beta[i]) * output_df$N[i-1] + delta[i] * output_df$G[i-1]
     
   }
-  return(G)
+  return(output_df)
   
 }
+
