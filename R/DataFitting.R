@@ -97,17 +97,18 @@ t4 = fit$par["t4"]
 model_results <-  PhenoModel(GDD,G_init,a,b,c,d,t1,t2,t3,t4)
 colnames(model_results)[2] <- "gcc_90"
 model_results$day <- yday(model_results$date)
+model_results$error <- NA
 
 # Calculate daily StDev from observed data and model prediction
 for (d in 1:365){
   target <- targets %>% filter(day == d & time < as.Date("01-01-20","%m-%d-%y") )
   model <- model_results %>% filter(day == d & date < as.Date("01-01-20","%m-%d-%y") )
   ssq = 0
-  for (i in target){
-    ssq = ssq + (target[i]$gcc_90 - model[i]$gcc_90)^2
+  for (i in 1:nrow(target)){
+    ssq = ssq + (target$gcc_90[i] - model$gcc_90[i])^2
   }
   error = sqrt(ssq/nrow(target))
-    
+  model_results$error[model_results$day==d]=error  
 }
   
   
@@ -148,9 +149,11 @@ model_results <-  PhenoModel(GDD,G_init,a,b,c,d,t1,t2,t3,t4)
 colnames(model_results)[2] <- "gcc_90"
 model_results$day <- yday(model_results$date)
 
+targets$year
 ggplot() +
-  geom_point(data = targets, aes(x = time, y = gcc_90), color = "springgreen4") +
-  geom_line(aes(x = as.Date(GDD$date), y = model_results$gcc_90)) +
+  # geom_line(aes(x = as.Date(GDD$date), y = model_results$gcc_90)) +
+  geom_ribbon(data = model_results, aes(x=as.Date(date), ymax = gcc_90+error,ymin=gcc_90-error))+
+  geom_point(data = targets, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
   labs(x="Day of year",y="GCC 90") +
   theme_classic(base_size = 15)
 
