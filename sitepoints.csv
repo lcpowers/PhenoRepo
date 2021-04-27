@@ -1,0 +1,9 @@
+﻿siteName,siteID,siteCode,domain,lat,long,elev,field_domint_plant_species,field_avg_number_of_green_days,field_avg_grean_increase_doy,field_avg_green_max_doy,field_avg_green_decrease_doy,field_avg_green_min_doy
+"Dead Lake, AL",DELA,NEON.D08.DELA.DP1.00033,D08: Ozarks Complex,32.542,-87.804,25,Quercus nigra (Water oak)|Celtis laevigata (Sugarberry)|Acer rubrum (Red maple),270,60,135,205,330
+"National Grassland, TX",CLBJ,NEON.D11.CLBJ.DP1.00033,D11: Southern Plains,33.401,-97.57,272,Quercus stellata (post oak)|Quercus marilandica (blackjack oak),260,60,135,265,320
+"Great Smoky Mountains National Park, TN",GRSM,NEON.D07.GRSM.DP1.00033,D07: Appalachians and Cumberland Plateau,35.689,-83.502,575,Liriodendron tulipfera (tulip tree/yellow poplar)|Lindera benzoin (spicebush)|Acer rubrum (red maple),220,90,155,215,310
+"Smithsonian Conservation Biology Institute, VA",SCBI,NEON.D02.SCBI.DP1.00033,D02: Mid-Atlantic,38.892925,-78.139494,352,Liriodendron tulipifera (tulip tree)|Microstegium vimineum (Japanese stiltgrass)|Fraxinus america (white ash),245,85,150,220,320
+"The University of Kansas Field Station, KS",UKFS,NEON.D06.UKFS.DP1.00033,D06: Prairie Peninsula,39.04,-95.192,322,Fraxinus america (white ash)|Symphoricarpos orbiculatus (coralberry)|Celtis occidentalis (common hackberry),255,75,160,210,330
+"Harvard Forest, MA",HARV,NEON.D01.HARV.DP1.00033,D01: Northeast,42.537,-72.173,348,Osmunda cinmomea (Cinmon fern)|Quercus rubra (Northern red oak)|Tsuga cadensis (Eastern hemlock),210,110,160,220,300
+"Bartlett Experimental Forest, NH",BART,NEON.D01.BART.DP1.00033,D01: Northeast,44.0639,-71.2874,274,Fagus grandifolia (American beech)|Tsuga cadensis (Eastern hemlock)|Acer rubrum (Red maple),180,120,170,220,300
+"Steigerwaldt Land Services, WI",STEI,NEON.D05.STEI.DP1.00033,D05: Great Lakes,45.509,-89.586,476,Populus tremuloides (quaking aspen)|Abies balsamea (balsam fir)|Acer rubrum (red maple),170,120,165,215,290
