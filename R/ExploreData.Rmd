@@ -509,7 +509,7 @@ ggplot(subset(targets,siteID=="GRSM"), aes(x=doy,y=gcc_90))+
   geom_vline(xintercept=264,color="grey70",linetype=3,size=0.9)+
   geom_vline(xintercept=355,color="grey70",linetype=3,size=0.9)+
   geom_point(size=3,alpha=0.5,color="springgreen4")+
-  labs(x="Day of year",y="GCC 90")+
+  labs(x="Day of year",y="Green chromatic coordinate")+
   scale_x_continuous(expand=c(0.01,0))+
   theme_classic(base_size = 15)
 ggsave("gccdataexample.png",width=10,height=5,dpi = 400)
