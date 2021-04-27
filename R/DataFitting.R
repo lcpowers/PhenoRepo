@@ -95,25 +95,19 @@ t3 = fit$par["t3"]
 t4 = fit$par["t4"]
 
 model_results <-  PhenoModel(GDD,G_init,a,b,c,d,t1,t2,t3,t4)
-#colnames(model_results)[1] <- "gcc_90"
-
-# Add day of the year to model results
-#dayOfYear <- (1:nrow(model_results)) %% 365 + 1
-#model_results <- cbind(day=dayOfYear,model_results)
-
-# Consider two years of data (prior to 2020)
-unc_targets <- targets %>% filter(time < as.Date("01-01-20","%m-%d-%y"))
-targets$sq_dif <- NA
+colnames(model_results)[2] <- "gcc_90"
+model_results$day <- yday(model_results$date)
 
 # Calculate daily StDev from observed data and model prediction
 for (d in 1:365){
   target <- targets %>% filter(day == d & time < as.Date("01-01-20","%m-%d-%y") )
-  model <- model_results %>% filter(day == d & time < as.Date("01-01-20","%m-%d-%y") )
+  model <- model_results %>% filter(day == d & date < as.Date("01-01-20","%m-%d-%y") )
   ssq = 0
   for (i in target){
-    ssq = ssq + (target[i]$gcc_90 - model[i]$G)^2
+    ssq = ssq + (target[i]$gcc_90 - model[i]$gcc_90)^2
   }
   error = sqrt(ssq/nrow(target))
+    
 }
   
   
