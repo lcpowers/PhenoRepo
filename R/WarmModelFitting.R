@@ -35,15 +35,15 @@ GDD$day <- yday(GDD$date)
 minDay <- yday(as.Date("02-14-18","%m-%d-%y"))
 maxDay <- yday(as.Date("08-31-18","%m-%d-%y"))
 targets <- targets %>% filter(day >= minDay & day <= maxDay)
-GDD <- GDD %>% filter(day >= minDay & day <= maxDay)
 
-###############################################################################
-#############  Find difference in data lengths here!!  ########################
-###############################################################################
+samedates <- intersect(targets$time,as.Date(GDD$date))
 
+# Make sure dates in GDD are also in targets
+GDD <- GDD %>% filter(day >= minDay & day <= maxDay) %>% 
+  filter(as.Date(date) %in% samedates)
 
-
-
+# Now make sure that dates in Targets are also in GDD. 
+targets <- targets %>% filter(time %in% samedates)
 
 ## Data fitting process --------------------------------------------------------
 
