@@ -37,6 +37,13 @@ maxDay <- yday(as.Date("08-31-18","%m-%d-%y"))
 targets <- targets %>% filter(day >= minDay & day <= maxDay)
 GDD <- GDD %>% filter(day >= minDay & day <= maxDay)
 
+###############################################################################
+#############  Find difference in data lengths here!!  ########################
+###############################################################################
+
+
+
+
 
 ## Data fitting process --------------------------------------------------------
 
@@ -44,7 +51,7 @@ GDD <- GDD %>% filter(day >= minDay & day <= maxDay)
 ssq_phenmod <- function(p,y,GDD) {
   #In the next line we refer to the parameters in p by name so that the code
   #is self documenting
-  y_pred <- WarmModel(GDD,G_init=p[1],a=p[2],b=p[3],t1=p[4],t2=p[5]) #predicted y
+  y_pred <- WarmModel(GDD,G_init=p[1],a=p[2],b=p[3],c=p[4],t1=p[5],t2=p[6]) #predicted y
   e <- y - y_pred$G #observed minus predicted y
   ssq <- sum(e^2)
   return(ssq)
@@ -59,6 +66,7 @@ ssq_phenmod <- function(p,y,GDD) {
 pvecs <- list(G_init=seq(0,0.4,length.out=10), # initial GCC
               a=seq(0,0.01,length.out=10),   # green-up: fast growth
               b=seq(0,0.001,length.out=10),  # maturation
+              b=seq(0,0.01,length.out=10),   # fall + winter decline
               t1=seq(30,70,length.out=10),   # Spring transition
               t2=seq(50,100,length.out=10))  # Summer transition
 
@@ -73,13 +81,12 @@ fit$value  # lowest SSQ found by fit function
 ## Finish data fitting using optim function ------------------------------------
 # Nelder - Mead Algorithm
 # Initialize guesses with Grid Search Results
-starts <- c(fit$par["a"],fit$par["b"],fit$par["c"],fit$par["d"],
-            fit$par["t1"],fit$par["t2"],fit$par["t3"],fit$par["t4"])
+starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["t1"],fit$par["t2"])
 
-fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD, 
-              G_init = targets$gcc_90[1])
+fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
+
 fit
-save.image(paste0("R/optimized_",Sys.Date(),".RData")) # Save data frame 
+save.image(paste0("R/optimized_WarmModel_",Sys.Date(),".RData")) # Save data frame 
 
 
 

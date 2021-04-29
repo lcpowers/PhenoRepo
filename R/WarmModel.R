@@ -9,17 +9,19 @@
 # a, b, c, d = growth and death rates (fit)
 # t1, t2, t3, t4 = Timing thresholds (fit)
 
-WarmModel <- function(GDD,G_init,a,b,t1,t2) {
+WarmModel <- function(GDD,G_init,a,b,c,t1,t2) {
   
   gdd = GDD$GDDdaily
   total_days = GDD$GDDdays
   rolling_avg = GDD$MovAvg_GDDdaily
+  date = GDD$date
   n <- length(gdd)
   
   # Parameters
-  beta <- a * gdd * (total_days > t1 & total_days <= t2)  # Green up
+  beta <- a * (total_days > t1 & total_days <= t2)          # Green up
   
-  delta <- b * (total_days > t2)       # Leaf Maturation
+  delta <- b * (total_days > t2) +                          # Leaf Maturation
+    c * (yday(date) > yday(as.Date("08-30-18","%m-%d-%y"))) # Fall and winter decline
   
   # Create Data Frame
   output_df <- data.frame(date = GDD$date,
