@@ -63,12 +63,12 @@ ssq_phenmod <- function(p,y,GDD) {
 # very slow for multiple parameters - scales exponentially 
 
 # list of parameter ranges
-pvecs <- list(G_init=seq(0,0.4,length.out=10), # initial GCC
-              a=seq(0,0.01,length.out=10),   # green-up: fast growth
-              b=seq(0,0.001,length.out=10),  # maturation
-              b=seq(0,0.01,length.out=10),   # fall + winter decline
-              t1=seq(30,70,length.out=10),   # Spring transition
-              t2=seq(50,100,length.out=10))  # Summer transition
+pvecs <- list(G_init=seq(0,0.4,length.out=5), # initial GCC
+              a=seq(0,0.01,length.out=5),   # green-up: fast growth
+              b=seq(0,0.001,length.out=5),  # maturation
+              c=seq(0,0.01,length.out=5),   # fall + winter decline
+              t1=seq(30,70,length.out=5),   # Spring transition
+              t2=seq(50,100,length.out=5))  # Summer transition
 
 # Feed in parameter list, ssq function, target data, input data
 fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
@@ -81,7 +81,7 @@ fit$value  # lowest SSQ found by fit function
 ## Finish data fitting using optim function ------------------------------------
 # Nelder - Mead Algorithm
 # Initialize guesses with Grid Search Results
-starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["t1"],fit$par["t2"])
+starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["c"],fit$par["t1"],fit$par["t2"])
 
 fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
 
@@ -98,10 +98,11 @@ save.image(paste0("R/optimized_WarmModel_",Sys.Date(),".RData")) # Save data fra
 G_init = fit$par["G_init"]
 a = fit$par["a"]
 b = fit$par["b"]
+c = fit$par["c"]
 t1 = fit$par["t1"]
 t2 = fit$par["t2"]
 
-model_results <-  WarmModel(GDD,G_init,a,b,t1,t2)
+model_results <-  WarmModel(GDD,G_init,a,b,c,t1,t2)
 colnames(model_results)[2] <- "gcc_90"
 model_results$day <- yday(model_results$date)
 
