@@ -63,7 +63,7 @@ ssq_phenmod <- function(p,y,GDD) {
 # very slow for multiple parameters - scales exponentially 
 
 # list of parameter ranges
-pvecs <- list(G_init=seq(0,0.4,length.out=5), # initial GCC
+pvecs <- list(G_init = mean(targets$gcc_90[1:7]),  # GCC guess = avg first 7 days of targets
               a=seq(0,0.01,length.out=5),   # green-up: fast growth
               b=seq(0,0.001,length.out=5),  # maturation
               c=seq(0,0.01,length.out=5),   # fall + winter decline
@@ -71,7 +71,8 @@ pvecs <- list(G_init=seq(0,0.4,length.out=5), # initial GCC
               t2=seq(50,100,length.out=5))  # Summer transition
 
 # Feed in parameter list, ssq function, target data, input data
-fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
+fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD, 
+                  G_init = mean(targets$gcc_90[1:7]))
 
 # Grid Search Results
 fit$par    # best parameter value found by fit function
@@ -81,7 +82,9 @@ fit$value  # lowest SSQ found by fit function
 ## Finish data fitting using optim function ------------------------------------
 # Nelder - Mead Algorithm
 # Initialize guesses with Grid Search Results
-starts <- c(fit$par["G_init"],fit$par["a"],fit$par["b"],fit$par["c"],fit$par["t1"],fit$par["t2"])
+starts <- c(fit$par["G_init"],
+            fit$par["a"],fit$par["b"],fit$par["c"],
+            fit$par["t1"],fit$par["t2"])
 
 fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
 
