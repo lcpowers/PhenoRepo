@@ -509,12 +509,45 @@ ggplot(subset(targets,siteID=="GRSM"), aes(x=doy,y=gcc_90))+
   geom_vline(xintercept=264,color="grey70",linetype=3,size=0.9)+
   geom_vline(xintercept=355,color="grey70",linetype=3,size=0.9)+
   geom_point(size=3,alpha=0.5,color="springgreen4")+
-  labs(x="Day of year",y="GCC 90")+
+  labs(x="Day of year",y="Green chromatic coordinate")+
   scale_x_continuous(expand=c(0.01,0))+
   theme_classic(base_size = 15)
 ggsave("gccdataexample.png",width=10,height=5,dpi = 400)
 
 ```
 
+
+
+```{r data}
+
+ind <- read_csv("data/pheno/GRSM/GRSM_individual.csv") 
+# gcc = ind$g_mean[1]/(sum(ind$g_mean[1]+ind$r_mean[1]+ind$b_mean[1]))
+
+targets <- read_csv("data/pheno/GRSM/GRSM_gccTargets.csv") %>% 
+  filter(!is.na(gcc_90))
+
+```
+
+### MEAN OF WHAT
+So where does gcc_90 come from in the daily df?
+```{r find_gcc90}
+
+ind_10 <- ind %>% 
+  filter(solar_elev>10)
+
+midday_gcc <- ind %>%  
+  group_by(date) %>% 
+  summarize(#meangcc = mean(gcc,na.rm=T),
+            # SE1_gcc_90 = as.numeric(quantile(gcc[solar_elev>1],probs=0.9,na.rm=T)),
+            SE10_gcc_90 = round(as.numeric(quantile(gcc[solar_elev>10],probs=0.9,na.rm=T)),5),
+            SE20_gcc_90 = as.numeric(quantile(gcc[solar_elev>20],probs=0.9,na.rm=T)),
+            SE30_gcc_90 = as.numeric(quantile(gcc[solar_elev>30],probs=0.9,na.rm=T)))
+
+midday_gcc <- merge(midday_gcc,targets, by.x='date',by.y='time')
+colnames(midday_gcc)[6]<-'target_gcc_90'
+midday_gcc$equal = midday_gcc$SE10_gcc_90==midday_gcc$target_gcc_90
+
+a <- read_csv("./data/pheno/allsites_gccTargets.csv")
+```
 
 
