@@ -1,0 +1,138 @@
+---
+title: "Seasonal ARIMA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+rm(list=ls())
+
+# remotes::install_github("eco4cast/neon4cast")
+
+library(tidyverse)
+library(fpp)
+library(forecast)
+library(neon4cast)
+library(tsibble)
+library(fable)
+library(scoringRules)
+```
+
+```{r data}
+
+daily <- read_csv("../data/pheno/GRSM/GRSM_daily.csv") %>% 
+  filter(!is.na(midday_r))
+colnames(daily)
+
+ggplot(daily,aes(x=doy))+
+  #geom_point(aes(y=g_mean),color='forestgreen')+
+  #geom_point(aes(y=r_mean),color='darkred')+
+  geom_point(aes(y=g_mean/r_mean),color='purple')+
+  geom_point(aes(y=gcc_90*2),color='forestgreen')+
+  theme_classic()
+
+col_df <- daily %>% 
+  select(date,midday_r,midday_g,midday_b) 
+col_df[,2:4] <- round(col_df[,2:4])
+
+#col_df$midday_r <- col_df$midday_r/max(col_df$midday_r)
+#col_df$midday_g <- col_df$midday_g/max(col_df$midday_g)
+#col_df$midday_b <- col_df$midday_b/max(col_df$midday_b)
+
+ggplot(daily, aes(x=date,y=gcc_90))+
+  geom_point(color=rgb(red=col_df$midday_r,
+                       green=col_df$midday_g,
+                       blue=col_df$midday_b,
+                       maxColorValue = 256),
+             size=3,alpha=0.75)+
+  theme_classic()
+```
+
+
+```{r}
+dailycrop <- filter(daily,doy>80&doy<150)
+
+ggplot(dailycrop,aes(x=doy,y=gcc_90))+
+  geom_point(aes(color=as.factor(year)))+
+  #geom_smooth(method="lm")+
+  theme_classic()
+  
+```
+
+
+# Simple ARIMA model
+```{r}
+gcc_ts <- ts(data = daily$gcc_90,start = c(2017,46), deltat = 1/365)
+gcc_arima <- auto.arima(gcc_ts,trace=T)
+
+futurVal <- forecast::forecast(gcc_arima,h=35,bootstrap=T)
+plot(futurVal)
+
+gcc_df <- data.frame(time = seq(Sys.Date(), by="day",length.out = 35),
+                           siteID = "GRSM",
+                           gcc_90 = round(futurVal$mean,4),
+                           gcc_sd = round(futurVal$mean-futurVal$lower[2],4)) 
+
+#gcc_forecast <-  melt(data = gcc_df,id.vars = 1:2,variable_name = variables)
+#colnames(gcc_forecast)[3:4] <- c("variables","values")
+
+scores <- neon4cast::score(gcc_df,c("phenology"))
+theme <- "phenology"
+target_file <- "phenology-targets.csv.gz"
+download_url <- paste0("https://data.ecoforecast.org/targets/",theme, "/", target_file)
+target <- readr::read_csv(download_url) %>% 
+  filter(siteID == "GRSM")
+
+```
+
+
+```{r}
+
+autoplot(euretail) + ylab("Retail index") + xlab("Year") + theme_classic()
+euretail %>% diff(lag=4) %>% ggtsdisplay()
+
+# Convert gcc_90 to class time-series
+gcc_ts <- ts(data = daily$gcc_90,start = c(2017,46), deltat = 1/365)
+components.ts = decompose(gcc_ts)
+plot(components.ts)
+acf(gcc_ts,lag.max = 365)
+
+seasonadjust <- gcc_ts - components.ts$seasonal
+ts_stationary <- diff(seasonadjust,differences = 1)
+pacf(ts_stationary,lag.max = 365)
+components.ts2 <- decompose(ts_stationary)
+plot(components.ts2)
+
+seasonadjust2 <- seasonadjust <- components.ts2$seasonal
+ts_stationary2 <- diff(seasonadjust2,differences = 1)
+acf(ts_stationary2,lag.max = 365)
+
+autoplot(gcc_ts) + ylab("Retail index") + xlab("Year") + theme_classic()
+gcc_ts %>% diff(lag=90) %>% diff() %>% ggtsdisplay()
+```
+
+```{r}
+aquatic <- read_csv("https://data.ecoforecast.org/targets/aquatics/aquatics-targets.csv.gz") %>% 
+  as_tsibble(index=time, key=siteID)
+blinded_aquatic <- aquatic %>% filter(time < max(time) - 35) %>% fill_gaps()
+oxygen_fc <- blinded_aquatic %>%
+  model(null = RW(oxygen)) %>%
+  forecast(h = "35 days") %>%
+  efi_format()
+
+temperature_fc <- blinded_aquatic  %>%
+  model(null = RW(temperature)) %>%
+  forecast(h = "35 days") %>%
+  efi_format()
+
+forecast <- inner_join(oxygen_fc, temperature_fc) %>% select(-.model)
+forecast_file <- glue::glue("{theme}-{date}-{team}.csv.gz",
+                            theme = "aquatics", 
+                            date=Sys.Date(),
+                            team = "example_null")
+scores <- score(forecast, theme = "aquatics")
+```
+

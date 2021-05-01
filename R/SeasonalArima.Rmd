@@ -1,0 +1,176 @@
+---
+title: "Seasonal Arima"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(root.dir="/home/claire/Git/PhenoRepo/")
+```
+
+Load packages
+```{r packages}
+
+rm(list=ls())
+
+# remotes::install_github("eco4cast/neon4cast")
+
+library(tidyverse)
+library(fpp)
+library(forecast)
+library(neon4cast)
+library(tsibble)
+library(fable)
+library(scoringRules)
+library(zoo)
+library(reshape2)
+
+```
+
+Get data
+```{r data}
+full_data <- read_csv("./data/pheno/allsites_gccTargets.csv") %>% 
+  filter(time <= as.Date('2021-03-01'))
+
+download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz","data/pheno/phenology-targets.csv.gz")
+targets <- read_csv("data/pheno/phenology-targets.csv.gz")
+
+sites <- unique(full_data$siteID)
+```
+
+Fix issue where data begins with NA, but leave other NAs (mainly @ UKFS)
+```{r}
+
+full_data_fixed <- NULL
+
+for(s in 1:length(sites)){
+  
+  site <- sites[s]
+  tmp <- filter(full_data,siteID==site)
+
+  while(is.na(tmp$gcc_90[1])){
+    
+    tmp <- tmp[2:nrow(tmp),]
+    
+  }
+    
+  full_data_fixed <- rbind(full_data_fixed,tmp)
+
+  rm(tmp)
+}
+
+full_data <- full_data_fixed
+
+```
+
+
+# Fill in other NA values (SHADY MOVES RIGHT NOW)
+```{r fillNA}
+
+gcc_noNA <- rollapply(full_data$gcc_90, width = 20, function(x){
+  
+  mean(x,na.rm = T)
+  
+  }, fill = NA)
+
+full_data$gcc_noNA <- gcc_noNA
+full_data$gcc_old <- full_data$gcc_90
+full_data$gcc_90 <- ifelse(is.na(full_data$gcc_90),full_data$gcc_noNA,full_data$gcc_90)
+
+full_data$gcc_90[is.nan(full_data$gcc_90)]<-NA
+
+ggplot(full_data,aes(x=time,y=gcc_90))+
+  geom_point()+
+  facet_wrap(~siteID,scales='free')
+```
+
+Seasonal ARIMA by site
+```{r sarima}
+
+all_forecast <- NULL
+
+for(s in 1:length(sites)){
+  print(sites[s])
+  
+  # filter data frame for current site
+  tmp_df = full_data %>% 
+    filter(siteID == sites[s]) %>% 
+    arrange(time) %>% 
+    select(1:4)
+  
+  first_date <- as.Date(min(tmp_df$time))
+  year <- as.numeric(str_sub(first_date,1,4))
+  doy <- as.numeric(strftime(first_date, format = "%j"))
+  
+  # convert gcc to time series data
+  tmp_ts = ts(tmp_df$gcc_90, start=c(year,doy), deltat = 1/365)
+  tmp_arima <- auto.arima(tmp_ts,trace=T)
+  assign(paste0(sites[s],"_arima"),tmp_arima)
+  
+  tmp_forecast <- forecast::forecast(tmp_arima,h=35,bootstrap=T)
+  assign(paste0(sites[s],"_4cast"),tmp_forecast)
+
+  tmp_4cast_df <- data.frame(time = seq(as.Date(max(tmp_df$time)), by="day",length.out = 35),
+                            siteID = sites[s],
+                            gcc_90 = as.numeric(round(tmp_forecast$mean,4)),
+                            gcc_sd = as.numeric(round(tmp_forecast$mean-tmp_forecast$lower[2],4))) 
+  all_forecast <- rbind(all_forecast,tmp_4cast_df)
+  
+  rm(tmp_df,tmp_4cast_df,tmp_arima,tmp_forecast,year,doy,tmp_ts,first_date)
+
+  }
+
+all_data <- rbind(full_data[,1:4],all_forecast) %>% arrange(siteID,time)
+save(list=ls(all.names=T),file=paste0("R/ARIMA_",Sys.Date(),".Rdata"))
+```
+
+```{r}
+
+ggplot(all_data,aes(x=time,y=gcc_90))+
+  geom_line()+
+  facet_wrap(~siteID)+
+  theme_bw()
+
+
+for(s in 1:length(sites)){
+  
+  tmp_4cast <- eval(as.name(paste0(sites[s],"_4cast")))
+  plot(tmp_4cast,main=sites[s])
+  
+}
+```
+
+7.1.4 Phenology
+    time: YYYY-MM-DD
+    siteID: NEON code for site
+    ensemble or statistic: if ensemble then integer value for forecast replicate within the year and month (i.e. ensemble member or MCMC sample); if statistic then either required to be the string mean or sd (see note below about statistic column).
+    forecast: set as 1 for each row (1 = variables were forecasted; a 0 would designate a hindcast which does not apply to submissions to the challenge)
+    data_assimilation: set as 0 for each row (0 = no data assimilation occurred because it is a forecast)
+    gcc_90: green chromatic coordinate
+
+Scoring
+```{r scoring}
+
+score_df <- melt(all_forecast,id.vars = c("time","siteID"),
+                 variable.name = "statistic",
+                 value.name = "gcc_90") %>% 
+  mutate(forecast=1,
+         obs_flag=2,
+         data_assimilation=0) %>% 
+  select(time,siteID,obs_flag,forecast,data_assimilation,statistic,gcc_90) 
+
+# replace gcc_90 and gcc_sd with mean and sd, resp. 
+score_df$statistic <- ifelse(score_df$statistic=="gcc_90","mean","sd")
+score_df$statistic <- as.character(score_df$statistic)
+write_csv(score_df,paste0("R/score_dfs/SArima_4cast_",Sys.Date(),".csv"))
+
+# class(score_df) <- class(example) # Didn't work
+
+# This only seems to work when we want to score relative to PhenoCam data that has already been observed
+scores <- neon4cast::score(score_df,theme=c("phenology"))
+write_csv(scores,paste0("R/score_dfs/SArima_scores_",Sys.Date(),".csv"))
+```
+
+
+
+
