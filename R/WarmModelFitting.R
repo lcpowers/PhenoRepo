@@ -45,6 +45,8 @@ GDD <- GDD %>% filter(day >= minDay & day <= maxDay) %>%
 # Now make sure that dates in Targets are also in GDD. 
 targets <- targets %>% filter(time %in% samedates)
 
+
+
 ## Data fitting process --------------------------------------------------------
 
 # Sum of Squares Function - used to measure error
@@ -68,11 +70,10 @@ pvecs <- list(G_init = mean(targets$gcc_90[1:7]),  # GCC guess = avg first 7 day
               b=seq(0,0.001,length.out=5),  # maturation
               c=seq(0,0.01,length.out=5),   # fall + winter decline
               t1=seq(30,70,length.out=5),   # Spring transition
-              t2=seq(50,100,length.out=5))  # Summer transition
+              t2=seq(50,120,length.out=5))  # Summer transition
 
 # Feed in parameter list, ssq function, target data, input data
-fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD, 
-                  G_init = mean(targets$gcc_90[1:7]))
+fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
 
 # Grid Search Results
 fit$par    # best parameter value found by fit function

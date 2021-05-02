@@ -20,7 +20,7 @@ WarmModel <- function(GDD,G_init,a,b,c,t1,t2) {
   # Parameters
   beta <- a * (total_days > t1 & total_days <= t2)          # Green up
   
-  delta <- b * (total_days > t2 & yday(date) <= yday(as.Date("08-30-18","%m-%d-%y"))) +   # Leaf Maturation
+  delta <- b * (total_days > t2 & yday(date) <= yday(as.Date("08-30-18","%m-%d-%y"))) +  # Leaf Maturation
     c * (yday(date) > yday(as.Date("08-30-18","%m-%d-%y"))) # Fall and winter decline
   
   # Create Data Frame
