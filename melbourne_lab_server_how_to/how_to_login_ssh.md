@@ -66,7 +66,7 @@ Install an SSH GUI application, such as Putty
 
 
 ## Multiple terminal windows
-You can login more than once to have multiple windows. This is Scenario 2 in [connection_scenarios.pdf](connection_scenarios.pdf).
+You can login more than once to have multiple windows.
 
 You can also use screen.
 ```bash
