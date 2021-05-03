@@ -1,0 +1,123 @@
+---
+title: "WarmModel_CP"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Rmd setup
+```{r packages}
+library(here) #for easy management of file paths within the repository
+library(tidyverse)
+library(lubridate)
+library(growthcurver)
+
+rm(list=ls())
+source(here("R/gridsearch_Casey.R")) #for gridsearch() function
+source("R/WarmModel_CP.R")
+
+# Start data for all datasets, to exclude partial first years
+dayOne = as.Date("12-31-17","%m-%d-%y")
+```
+
+# Read in target dataset
+```{r targets}
+
+# Read and format target data  -------------------------------------------------
+targets_all <- read.csv(file = 'data/pheno/GRSM/GRSM_gccTargets.csv') %>% 
+  select(1,3) %>%  # Only keep GCC and date
+  filter(!is.na(gcc_90)) %>%  # Remove NA's
+  mutate(time = as.Date(time),
+         day = yday(time)) %>% # Convert to date format
+  filter(time >= dayOne) 
+
+```
+
+# Read in Temperature-related data
+```{r tempdata}
+temp_all <- read.csv(file = 'data/drivers/neon/GDDandtemp_allsites.csv') %>%
+  filter(siteID == 'GRSM') %>%  # Only consider GRSM site
+  filter(date >= dayOne) %>% 
+  mutate(day = yday(date),
+         date = as.Date(date))
+
+# Add in a daily temperature difference column with a 1 day lag. Consider changing the lag?
+lagn = 1
+temp_all$daily_diff <- c(rep(NA,lagn),diff(temp_all$daily_mean,lag = lagn))
+temp_all <- filter(temp_all,!is.na(daily_diff))
+```
+
+# Synchronize dates in the targets and temperature data, and subset to parts of the year interested in for warm model
+```{r fixDates}
+
+spring_date = "01-31-2018"
+fall_date = "09-15-18"
+minDay <- yday(as.Date(spring_date,"%m-%d-%y"))
+maxDay <- yday(as.Date(fall_date,"%m-%d-%y"))
+
+# Subset targets data set
+targets <- targets_all %>% filter(day >= minDay & day <= maxDay) 
+
+# Find the dates that overlap between the subsetted targets dataset and the temp dataset
+samedates <- intersect(as.character(targets$time),as.character(temp_all$date)) %>% as.Date()
+
+# Make sure dates in temp are also in targets
+temp <- temp_all %>% filter(date %in% samedates)
+targets <- targets %>% filter(time %in% as.Date(samedates))
+
+# Check for overlapping dates -- have to do both ways to check both. Result 
+setdiff(temp$date,targets$time) %>% length()==0
+setdiff(targets$time,temp$date) %>% length()==0
+```
+
+# Data fitting
+```{r datafitting}
+
+## Data fitting process --------------------------------------------------------
+
+# Sum of Squares Function - used to measure error
+ssq_phenmod <- function(p,y,temp_df) {
+  #In the next line we refer to the parameters in p by name so that the code
+  #is self documenting
+  y_pred <- WarmModel_CP(temp_df=temp,
+                         temp_var = 'daily_diff',
+                         G_init=p[[1]],
+                         a=p[[2]],b=p[[3]],
+                         t1=p[[4]],t2=p[[5]],
+                         K = p[[6]],
+                         spring_date = spring_date,
+                         fall_date = fall_date) #predicted y
+  e <- y - y_pred$G #observed minus predicted y
+  ssq <- sum(e^2)
+  return(ssq)
+}
+
+
+# # list of parameter ranges
+pvecs <- list(G_init=seq(min(targets$gcc_90)*0.9,max(targets$gcc_90)*1.1,length.out=10), # initial GCC
+              a=seq(0,0.01,length.out=10),   # green-up: fast growth
+              b=seq(0,0.001,length.out=10),  # maturation
+              t1=seq(min(temp$daily_diff),max(temp$daily_diff),length.out=10),   # Spring transition
+              t2=seq(50,100,length.out=10),
+              K = seq(max(targets$gcc_90)*1.1,1,length.out=10))  # Summer transition
+
+# # Feed in parameter list, ssq function, target data, input data
+fit <- gridsearch(pvecs = pvecs, 
+                  func = ssq_phenmod,
+                  y=targets$gcc_90,
+                  temp,spring_date,fall_date)
+```
+
+
+```{r}
+p = pvecs <- list(G_init=targets$gcc_90[1], # initial GCC
+              a=0.005,   # green-up: fast growth
+              b=0.0005,  # maturation
+              t1=mean(temp$daily_diff),   # Spring transition
+              t2=mean(temp$daily_diff),
+              K = 1) 
+```
+
+
