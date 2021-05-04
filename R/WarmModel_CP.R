@@ -23,7 +23,8 @@ WarmModel_CP <- function(temp_df,temp_var,G_init,a,b,t1,t2,spring_date,fall_date
   n <- length(date)
   
   beta <- a * tempdata * (tempdata > t1 & tempdata <= t2) # Green up 
-  delta <- b * tempdata * (tempdata > t2)  
+  delta <- b * tempdata * (tempdata > t2)  + # Leaf maturation
+    c * (yday(date) > yday(as.Date(fall_date,"%m-%d-%y"))) # Fall and winter decline
   
   # Start building output dateframe
   output_df <- data.frame(date = date,
@@ -43,12 +44,15 @@ WarmModel_CP <- function(temp_df,temp_var,G_init,a,b,t1,t2,spring_date,fall_date
            
            # Otherwise, calculate following day from equations
            {
-             output_df$G[i] = (1 - delta[i]) * output_df$G[i-1] + beta[i] * output_df$N[i-1] * (1 - output_df$N[i-1]/K)
+             output_df$G[i] = (1 - delta[i]) * output_df$G[i-1] + beta[i] * output_df$N[i-1]
              output_df$N[i] = (1 - beta[i]) * output_df$N[i-1] + delta[i] * output_df$G[i-1]
            })
   }
-  return(output_df)
   
+  output_df <- merge(output_df,targets,by.x='date',by.y='time')
+  return(output_df)
+ ggplot(output_df,aes(x=date,y=G)) +
+   geom_point()
 }
 
 
