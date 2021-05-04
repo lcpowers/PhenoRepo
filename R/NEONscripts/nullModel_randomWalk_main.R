@@ -16,9 +16,13 @@ team_name <- "EFInull"
 download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz",
               "phenology-targets.csv.gz")
 
-phenoDat <- read.csv("phenology-targets.csv.gz",header=TRUE) %>% 
-  filter(time<="2021-03-01")
+phenoDat <- read.csv("phenology-targets.csv.gz",header=TRUE) 
 sites <- unique(as.character(phenoDat$siteID))
+
+ggplot(phenoDat,aes(x=as.Date(time),y=gcc_90))+
+  geom_point(aes(color=gcc_90))+
+  facet_wrap(~siteID)+
+  scale_x_date(date_breaks="1 year")
 
 forecast_length <- 35
 predictions <- array(NA, dim = c(forecast_length, length(sites), 2000))

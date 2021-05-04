@@ -94,25 +94,6 @@ write_csv(gdd_df,"data/drivers/neon/GDDandtemp_allsites.csv")
 targets_df <- read_csv("phenology-targets.csv.gz")
 all_df <- merge(gdd_df,targets_df ,all.x=T, by.x = c("date","siteID"), by.y = c("time","siteID"))
 
-ggplot(all_df,aes(x=date,y=MovAvg_GDDdaily))+
-  geom_point()+
-  theme_classic()
-
-ggplot(all_df,aes(y=MovAvg_GDDdaily,x=doy))+
-  geom_point(aes(color=siteID))+
-  theme_classic()+
-  facet_wrap(~siteID)
-
-ggplot(all_df,aes(y=MovAvg_GDDyesno,x=doy))+
-  geom_point(aes(color=siteID))+
-  theme_classic()+
-  facet_wrap(~siteID)
-
-ggplot(all_df,aes(x=MovAvg_GDDdaily,y=gcc_90))+
-  geom_point()+
-  theme_classic()
-
-
 ### GDD plots
 ggplot(subset(all_df,siteID=="GRSM"&year==2019),aes(x=date,y=daily_mean))+
   geom_point(color="springgreen4",size=2,alpha=0.75)+
@@ -145,8 +126,6 @@ ggplot(subset(all_df,siteID=="GRSM"),aes(x=date,y=GDDtotal))+
   theme_classic(base_size = 14)+
   labs(x="",y="Total growing degree units")
 ggsave("PrezFigures/GRSMGDDtotal.png",dpi=400,height=3,width=4)
-
-
 
 # Start with one site "GRSM"
 
