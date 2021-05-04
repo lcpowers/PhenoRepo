@@ -15,7 +15,7 @@
 #' 
 
 
-WarmModel_CP <- function(temp_df,temp_var,G_init,a,b,t1,t2,spring_date,fall_date,K) {
+WarmModel_CP <- function(temp_df,temp_var,G_init,a,b,c,t1,t2,spring_date,fall_date,K) {
   
   tempcol <- which(colnames(temp_df)==temp_var)
   tempdata <- temp_df[,tempcol]
@@ -44,8 +44,9 @@ WarmModel_CP <- function(temp_df,temp_var,G_init,a,b,t1,t2,spring_date,fall_date
            
            # Otherwise, calculate following day from equations
            {
-             output_df$G[i] = (1 - delta[i]) * output_df$G[i-1] + beta[i] * output_df$N[i-1]
-             output_df$N[i] = (1 - beta[i]) * output_df$N[i-1] + delta[i] * output_df$G[i-1]
+             # Today's gcc = yesterday's gcc + beta (gcc growth rate)*yesterdays*log growth - what goes to N
+             output_df$G[i] = output_df$G[i-1] + beta[i] * output_df$G[i-1] *(1-output_df$G[i-1]/K) - delta[i] * output_df$N[i-1]
+             output_df$N[i] = 1 - output_df$G[i]
            })
   }
   
