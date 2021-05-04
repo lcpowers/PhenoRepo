@@ -131,6 +131,42 @@ optim_fit
 save.image(file = paste0("R/optimized_WarmModel_CP_",Sys.Date(),".RData"),list=c(gridsearch_fit,optim_fit)) # Save data frame 
 ```
 
+## Add uncertainty -------------------------------------------------------------
+```{r}
+nll_warm_phenmod <- function(p,y,GDD,G_init) {
+  #In the next line we refer to the parameters in p by name so that the code
+  #is self documenting
+  y_pred <- WarmModel_CP(temp_df=temp,
+                         temp_var = 'daily_diff',
+                         G_init=p[1],
+                         a=p[2],b=p[3],c=p[4],
+                         t1=p[5],t2=p[6],
+                         K = p[7],
+                         spring_date = spring_date,
+                         fall_date = fall_date) #predicted y#predicted gcc
+  nll <- -sum(dnorm(targets$gcc_90,mean=y_pred,sd=p[8],log=TRUE))
+  return(nll)
+}
+
+
+# Calculating standard deviation to exp model at each day using 2018-2019 data
+# warm model results
+G_init = optim_fit$par["G_init"]
+a = optim_fit$par["a"]
+b = optim_fit$par["b"]
+c = optim_fit$par["c"]
+d = optim_fit$par["d"]
+t1 = optim_fit$par["t1"]
+t2 = optim_fit$par["t2"]
+t3 = optim_fit$par["t3"]
+t4 = optim_fit$par["t4"]
+
+sd_start <- mean(targets$gcc_90)
+starts <- c(G_init=G_init,a,b,c,d,t1,t2,t3,t4,sd=sd_start)
+
+fit_phenomod <- optim(par=starts,nll_phenmod,GDD=GDD,G_init=G_init)
+fit_phenomod
+```
 
 ## For running warmmodel_CP line by line
 ```{r}
