@@ -1,0 +1,191 @@
+---
+title: "WarmModel_CP"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Rmd setup
+```{r packages}
+library(here) #for easy management of file paths within the repository
+library(tidyverse)
+library(lubridate)
+library(growthcurver)
+
+rm(list=ls())
+source(here("R/gridsearch_Casey.R")) #for gridsearch() function
+source(here("R/WarmModel_CP.R"))
+
+# Start data for all datasets, to exclude partial first years
+dayOne = as.Date("12-31-17","%m-%d-%y")
+```
+
+# Read in target dataset
+```{r targets}
+
+# Read and format target data  -------------------------------------------------
+targets_all <- read.csv(here(file = 'data/pheno/GRSM/GRSM_gccTargets.csv')) %>% 
+  select(1,3) %>%  # Only keep GCC and date
+  filter(!is.na(gcc_90)) %>%  # Remove NA's
+  mutate(time = as.Date(time),
+         day = yday(time)) %>% # Convert to date format
+  filter(time >= dayOne) 
+
+```
+
+# Read in Temperature-related data
+```{r tempdata}
+temp_all <- read.csv(here(file = 'data/drivers/neon/GDDandtemp_allsites.csv')) %>%
+  filter(siteID == 'GRSM') %>%  # Only consider GRSM site
+  filter(date >= dayOne) %>% 
+  mutate(day = yday(date),
+         date = as.Date(date))
+
+# Add in a daily temperature difference column with a 1 day lag. Consider changing the lag?
+lagn = 1
+temp_all$daily_diff <- c(rep(NA,lagn),diff(temp_all$daily_mean,lag = lagn))
+temp_all <- filter(temp_all,!is.na(daily_diff))
+```
+
+# Synchronize dates in the targets and temperature data, and subset to parts of the year interested in for warm model
+```{r fixDates}
+
+spring_date = "01-31-2018"
+fall_date = "09-15-18"
+minDay <- yday(as.Date(spring_date,"%m-%d-%y"))
+maxDay <- yday(as.Date(fall_date,"%m-%d-%y"))
+
+# Subset targets data set
+targets <- targets_all %>% filter(day >= minDay & day <= maxDay) 
+
+# Find the dates that overlap between the subsetted targets dataset and the temp dataset
+samedates <- intersect(as.character(targets$time),as.character(temp_all$date)) %>% as.Date()
+
+# Make sure dates in temp are also in targets
+temp <- temp_all %>% filter(date %in% samedates)
+targets <- targets %>% filter(time %in% as.Date(samedates))
+
+# Check for overlapping dates -- have to do both ways to check both. Result 
+setdiff(temp$date,targets$time) %>% length()==0
+setdiff(targets$time,temp$date) %>% length()==0
+```
+
+# Data fitting
+```{r datafitting}
+
+## Data fitting process --------------------------------------------------------
+
+# Sum of Squares Function - used to measure error
+ssq_phenmod <- function(p,y,temp_df) {
+  #In the next line we refer to the parameters in p by name so that the code
+  #is self documenting
+  y_pred <- WarmModel_CP(temp_df=temp,
+                         temp_var = 'daily_diff',
+                         G_init=p[[1]],
+                         a=p[[2]],b=p[[3]],c=p[[4]],
+                         t1=p[[5]],t2=p[[6]],
+                         K = p[[7]],
+                         spring_date = spring_date,
+                         fall_date = fall_date) #predicted y
+  e <- y - y_pred$G #observed minus predicted y
+  ssq <- sum(e^2)
+  return(ssq)
+}
+
+
+# # list of parameter ranges
+pvecs <- list(G_init=mean(targets$gcc_90[1:7]), # initial GCC
+              a=seq(0,0.01,length.out=10),   # green-up: fast growth
+              b=seq(0,0.001,length.out=10),  # maturation
+              c=seq(0,0.01,length.out=5),
+              t1=seq(min(temp$daily_diff),max(temp$daily_diff),length.out=10),   # Spring transition
+              t2=seq(min(temp$daily_diff),max(temp$daily_diff),length.out=10),
+              K = seq(max(targets$gcc_90)*1.1,1,length.out=5))  # Summer transition
+
+# # Feed in parameter list, ssq function, target data, input data
+fit <- gridsearch(pvecs = pvecs, 
+                  func = ssq_phenmod,
+                  y=targets$gcc_90)
+
+gridsearch_fit <- fit
+```
+
+# Finish data fitting using optim function
+```{r fitResults}
+
+# Grid Search Results
+fit$par    # best parameter value found by fit function
+fit$value  # lowest SSQ found by fit function
+
+# Nelder - Mead Algorithm
+# Initialize guesses with Grid Search Results
+starts <- c(fit$par["G_init"],
+            fit$par["a"],fit$par["b"],fit$par["c"],
+            fit$par["t1"],fit$par["t2"],
+            fit$par["K"])
+
+optim_fit <- optim(starts, ssq_phenmod, y=targets$gcc_90, temp_df=temp, spring_date, fall_date)
+optim_fit
+save.image(file = paste0("R/optimized_WarmModel_CP_",Sys.Date(),".RData"),list=c(gridsearch_fit,optim_fit)) # Save data frame 
+```
+
+# Add uncertainty
+```{r addUncertainty}
+nll_warm_phenmod <- function(p,y,GDD,G_init) {
+  #In the next line we refer to the parameters in p by name so that the code
+  #is self documenting
+  y_pred <- WarmModel_CP(temp_df=temp,
+                         temp_var = 'daily_diff',
+                         G_init=p[1],
+                         a=p[2],b=p[3],c=p[4],
+                         t1=p[5],t2=p[6],
+                         K = p[7],
+                         spring_date = spring_date,
+                         fall_date = fall_date) #predicted y#predicted gcc
+  nll <- -sum(dnorm(targets$gcc_90,mean=y_pred,sd=p[8],log=TRUE))
+  return(nll)
+}
+
+# Calculating standard deviation to exp model at each day using 2018-2019 data
+# warm model results
+G_init = optim_fit$par["G_init"]
+a = optim_fit$par["a"]
+b = optim_fit$par["b"]
+c = optim_fit$par["c"]
+t1 = optim_fit$par["t1"]
+t2 = optim_fit$par["t2"]
+K = optim_fit$par["K"]
+
+sd_start <- sd(targets$gcc_90)
+starts <- c(G_init=G_init,a,b,c,t1,t2,K,sd=sd_start)
+
+fit_phenomod <- optim(par=starts, # Starting parameter values
+                      nll_phenmod, # Function used
+                      temp_df=temp,spring_date = spring_date,fall_date = fall_date) # Other inputs
+fit_phenomod
+```
+
+## For running warmmodel_CP line by line
+```{r}
+
+temp_df = temp
+G_init=targets$gcc_90[1]
+a=mean(seq(0,0.01,length.out=10))   # green-up: fast growth
+b=mean(seq(0,0.001,length.out=10))  # maturation
+c=mean(seq(0,0.01,length.out=5))
+t1=mean(seq(min(temp$daily_diff),max(temp$daily_diff),length.out=10))   # Spring transition
+t2=mean(seq(min(temp$daily_diff),max(temp$daily_diff),length.out=10))
+K = seq(max(targets$gcc_90)*1.1,1,length.out=5)
+temp_var = 'daily_diff'
+
+p <- list(G_init=targets$gcc_90[1],
+a=mean(seq(0,0.01,length.out=10)),   # green-up: fast growth
+b=mean(seq(0,0.001,length.out=10)) , # maturation
+c=mean(seq(0,0.01,length.out=5)),
+t1=mean(seq(min(temp$daily_diff),max(temp$daily_diff),length.out=10)) ,  # Spring transition
+t2=mean(seq(min(temp$daily_diff),max(temp$daily_diff),length.out=10)),
+K = seq(max(targets$gcc_90)*1.1,1,length.out=5))
+```
+

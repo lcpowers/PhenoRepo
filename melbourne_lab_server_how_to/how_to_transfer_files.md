@@ -5,7 +5,7 @@ The ssh daemon on the linux server runs an SFTP server. This means that file tra
 
 
 ## GUI applications for client
-A GUI client is much faster and more convenient than the command line.
+A GUI application is much faster and more convenient than the command line.
 * [WinSCP](http://winscp.net) (opensource). Win (recommended).
 * [Cyberduck](https://cyberduck.io/) (opensource). Win, Mac (recommended).
 * [Filezilla](https://filezilla-project.org/) (opensource). Win, Mac, Linux.
@@ -18,4 +18,5 @@ Most desktop linux file browsers have SFTP built in. Precede the location addres
 
 
 ## Command line
-Command line tools should work in Windows 10 (use Windows Subsystem for Linux), Mac, or Linux clients. I believe SFTP is the most modern protocol, so use the `sftp` tool. The `scp` command can also be used but it apparently uses an older version of SSH, so `sftp` is preferred. The command line is a hassle for routine and frequent file transfers, such as during an analysis session. It can be a good approach for transfers of large files from cloud services such as Amazon Web Services.
+Command line tools work in Windows 10 (using Windows Subsystem for Linux), Mac, or Linux clients. I believe SFTP is the most modern protocol, so use the `sftp` tool. The `scp` command can also be used but it apparently uses an older version of SSH, so `sftp` is preferred. The command line is a hassle for routine and frequent file transfers, such as during an analysis session. It can be a good approach for transfers of large files from cloud services such as Amazon Web Services.
+
