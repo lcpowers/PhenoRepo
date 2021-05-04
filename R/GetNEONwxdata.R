@@ -138,5 +138,3 @@ ggplot(all_temp,aes(x=date,y=daily_mean))+
   geom_point(aes(color=siteID))+
   facet_wrap(~siteID)
 
-# Precip
-
