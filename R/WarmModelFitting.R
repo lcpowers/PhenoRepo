@@ -53,7 +53,7 @@ targets <- targets %>% filter(time %in% samedates)
 ssq_phenmod <- function(p,y,GDD) {
   #In the next line we refer to the parameters in p by name so that the code
   #is self documenting
-  y_pred <- WarmModel(GDD,G_init=p[1],a=p[2],b=p[3],c=p[4],t1=p[5],t2=p[6]) #predicted y
+  y_pred <- WarmModel(GDD,G_init=p[1],a=p[2],b=p[3],t1=p[4],t2=p[5]) #predicted y
   e <- y - y_pred$G #observed minus predicted y
   ssq <- sum(e^2)
   return(ssq)
@@ -66,11 +66,10 @@ ssq_phenmod <- function(p,y,GDD) {
 
 # list of parameter ranges
 pvecs <- list(G_init = mean(targets$gcc_90[1:7]),  # GCC guess = avg first 7 days of targets
-              a=seq(0,0.01,length.out=5),   # green-up: fast growth
-              b=seq(0,0.001,length.out=5),  # maturation
-              c=seq(0,0.01,length.out=5),   # fall + winter decline
-              t1=seq(30,70,length.out=5),   # Spring transition
-              t2=seq(50,120,length.out=5))  # Summer transition
+              a=seq(0,0.01,length.out=10),   # green-up: fast growth
+              b=seq(0,0.001,length.out=10),  # maturation
+              t1=seq(30,70,length.out=10),   # Spring transition
+              t2=seq(50,120,length.out=10))  # Summer transition
 
 # Feed in parameter list, ssq function, target data, input data
 fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
@@ -84,7 +83,7 @@ fit$value  # lowest SSQ found by fit function
 # Nelder - Mead Algorithm
 # Initialize guesses with Grid Search Results
 starts <- c(fit$par["G_init"],
-            fit$par["a"],fit$par["b"],fit$par["c"],
+            fit$par["a"],fit$par["b"],
             fit$par["t1"],fit$par["t2"])
 
 fit <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
@@ -102,16 +101,15 @@ save.image(paste0("R/optimized_WarmModel_",Sys.Date(),".RData")) # Save data fra
 G_init = fit$par["G_init"]
 a = fit$par["a"]
 b = fit$par["b"]
-c = fit$par["c"]
 t1 = fit$par["t1"]
 t2 = fit$par["t2"]
 
-model_results <-  WarmModel(GDD,G_init,a,b,c,t1,t2)
+model_results <-  WarmModel(GDD,G_init,a,b,t1,t2)
 colnames(model_results)[2] <- "gcc_90"
 model_results$day <- yday(model_results$date)
 
 ggplot() +
-  geom_line(aes(x = as.Date(GDD$date), y = model_results$gcc_90)) +
+  geom_point(aes(x = as.Date(GDD$date), y = model_results$gcc_90), color = "red") +
   geom_point(data = targets, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
   labs(x="Day of year",y="GCC 90") +
   theme_classic(base_size = 15)
