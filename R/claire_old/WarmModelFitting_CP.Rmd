@@ -13,10 +13,12 @@ library(here) #for easy management of file paths within the repository
 library(tidyverse)
 library(lubridate)
 library(growthcurver)
+library(imputeTS)
+library(zoo)
 
 rm(list=ls())
 source(here("R/gridsearch_Casey.R")) #for gridsearch() function
-source(here("R/WarmModel_CP.R"))
+source(here("R/claire_old/WarmModel_CP.R"))
 
 # Start data for all datasets, to exclude partial first years
 dayOne = as.Date("12-31-17","%m-%d-%y")
@@ -25,13 +27,28 @@ dayOne = as.Date("12-31-17","%m-%d-%y")
 # Read in target dataset
 ```{r targets}
 
-# Read and format target data  -------------------------------------------------
-targets_all <- read.csv(here(file = 'data/pheno/GRSM/GRSM_gccTargets.csv')) %>% 
+# Read and format target data 
+targets <- read.csv(here(file = 'data/pheno/GRSM/GRSM_gccTargets.csv')) %>% 
   select(1,3) %>%  # Only keep GCC and date
-  filter(!is.na(gcc_90)) %>%  # Remove NA's
+  #filter(!is.na(gcc_90)) %>%  # Remove NA's
   mutate(time = as.Date(time),
-         day = yday(time)) %>% # Convert to date format
+         day = yday(time),
+         year = str_sub(time,1,4)) %>% # Convert to date format
   filter(time >= dayOne) 
+
+
+#### Start here ####
+x <- zoo(targets$gcc_90,targetsl$time)
+x <- na_interpolation(x, option = "linear") %>% as.data.frame() %>% rownames_to_column()
+colnames(x) <- c("time","gcc_90")
+x$time <- as.Date(x$time)
+targets$gcc_90 <- x$gcc_90
+#### End here ####
+
+
+ggplot(targets,aes(x=time))+
+  geom_point(aes(y=gcc_90_2),color='green')+
+  geom_point(aes(y=gcc_90),color='red')
 
 ```
 
