@@ -1,0 +1,44 @@
+---
+title: "Boss File"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Packages
+```{r packages}
+
+library(here)
+library(lubridate)
+library(tidyverse)
+library(neon4cast)
+library(neonUtilities)
+
+rm(list=ls())
+```
+
+# Update and read-in target data
+```{r targetDate}
+# Update target data if not yet updated today 
+target_fp <- "data/pheno/phenology-targets.csv.gz"
+
+if(as.Date(file.info(target_fp)$ctime)!=Sys.Date()) {
+  print("Downloading updated target data")
+    download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz",
+              target_fp)
+    }
+
+targets <- read.csv(target_fp,header=TRUE) 
+
+# Remove extra vars from Global Env
+rm(target_fp)
+```
+
+# Update Temperature Data
+```{r}
+
+```
+
+
