@@ -37,7 +37,11 @@ rm(target_fp)
 ```
 
 # Update Temperature Data
-```{r}
+```{r NEONtempdata}
+
+# Update NEON temperature data and read in. This will take a while, so only run this line if you want to update weather data, otherise keep it commented out and run the line the reads in the most recent temperature data
+source("R/GetNEONwxdata.R")
+
 
 ```
 
