@@ -1,50 +1,59 @@
-# Phenology Model - Spring and Summer Only
+#' Phenology Model considering part of winter, spring, and summer only
+#'
+#' @param temp_df A dataframe with daily mean temperature values 
+#' @param temp_var Name of column in temp df to use as beta and delta predictor variable
+#' @param G_init Initial gcc 90 value
+#' @param a parameter in gcc growth rate during green up period FIT BY MODEL
+#' @param b paramter used in gcc decay rate during fall senescence FIT BY MODEL
+#' @param t1 start date for green up time period FIT BY MODEL
+#' @param t2 start date for summer leaf maturation period FIT BY MODEL
+#' @param spring_date earliest date for input model data per yer
+#' @param fall_date end data for input model data per year
+#' @param K gcc carrying capacity FIT BY MODEL
+#' 
+#' @return dataframe of dates, predicted GCC values and non-GCC values values
+#' 
 
-# Input parameters:
-# t = day of year
-# gdd = daily growing degree day value
-# total_days = Accumulated number of growing degree days
-# rolling_avg = 7 day avg GDD 
-# G_init = Initial green value
-# a, b, c, d = growth and death rates (fit)
-# t1, t2, t3, t4 = Timing thresholds (fit)
 
-WarmModel_CP <- function(temp_df,G_init,a,b,t1,t2,spring_date,fall_date,K=1) {
+WarmModel_CP <- function(temp_df,temp_var,G_init,a,b,c,t1,t2,spring_date,fall_date,K) {
   
-  midday_mean <- temp_df$midday_mean
-  daily_mean <- temp_df$daily_mean
-  daily_diff <- temp_df$daily_diff
+  tempcol <- which(colnames(temp_df)==temp_var)
+  tempdata <- temp_df[,tempcol]
   date = temp_df$date
   n <- length(date)
   
-  # Parameters
-  beta <- a * daily_diff * (midday_mean > t1 & midday_mean <= t2) * (1 - a/K) # Green up
+  beta <- a * tempdata * (tempdata > t1 & tempdata <= t2) # Green up 
+  delta <- b * tempdata * (tempdata > t2)  + # Leaf maturation
+    c * (yday(date) > yday(as.Date(fall_date,"%m-%d-%y"))) # Fall and winter decline
   
-  delta <- b * daily_diff * (midday_mean > t2)                           # Leaf Maturation
-   # c * ifelse(yday(date) > yday(as.Date(fall_date,"%m-%d-%y")),1,0) # Fall and winter decline
-  # Create Data Frame
+  # Start building output dateframe
   output_df <- data.frame(date = date,
                           G = rep(NA,n),
                           N = rep(NA,n))
-
   
-  # Model sim
   for (i in 1:n) {
     
     # Reset to initial conditions on spring_date every year
-    ifelse(yday(GDD$date[i]) == yday(as.Date(spring_date,"%m-%d-%y")),
-      # Initial conditions
-      {
-      output_df$G[i] = G_init
-      output_df$N[i] = 1 - G_init
-      },
-    # Otherwise, calculate following day from equations
-      {
-      output_df$G[i] = (1 - delta[i]) * output_df$G[i-1] + beta[i] * output_df$N[i-1]
-      output_df$N[i] = (1 - beta[i]) * output_df$N[i-1] + delta[i] * output_df$G[i-1]
-    })
+    ifelse(yday(output_df$date[i]) == yday(as.Date(spring_date,"%m-%d-%y")),
+           
+           # Initial conditions
+           {
+             output_df$G[i] = G_init
+             output_df$N[i] = 1 - G_init
+           },
+           
+           # Otherwise, calculate following day from equations
+           {
+             # Today's gcc = yesterday's gcc + beta (gcc growth rate)*yesterdays*log growth - what goes to N
+             output_df$G[i] = output_df$G[i-1] + beta[i] * output_df$N[i-1]*(1-output_df$N[i-1]/K) - delta[i] * output_df$G[i-1]
+             output_df$N[i] = output_df$N[i-1] + delta[i] * output_df$G[i-1] - beta[i] * output_df$N[i-1]*(1-output_df$N[i-1]/K)
+           })
   }
-  return(output_df)
   
+  output_df <- merge(output_df,targets,by.x='date',by.y='time')
+  return(output_df)
+ ggplot(output_df,aes(x=date,y=G)) +
+   geom_point()
 }
+
 
