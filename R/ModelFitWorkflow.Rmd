@@ -89,11 +89,25 @@ rm(neon_wx,noaa_wx)
 
 # Apply GDD function which will fill in missing temp data and calculate GDD values
 GDD_df <- calcGDDfun(temp_df=all_wx,targets_df = targets,int_method = "spline")
+
+# For each site, check that target dates have matching weather dates
+for(site in sites){
+  
+  targs <- filter(targets,siteID==site & time <= Sys.Date())
+  wx <- filter(GDD_df,siteID==site & date <= Sys.Date())
+  x = as.Date(setdiff(as.Date(targs$time),as.Date(wx$date)))
+  
+  if(length(x)>0) print(paste0("Targets for ",site," missing wx for",x))
+  
+}
+
 ```
 
 ## I. Model fitting   
-### a. Gridsearch
+### a. Parameter fitting
 ```{r gridsearch}
+## Is there any reason for this list of vectors to be different for different sites?
+
 # list of parameter ranges
 pvecs <- list(G_init = mean(targets$gcc_90[1:7]),  # GCC guess = avg first 7 days of targets
               a=seq(0,0.01,length.out=5),   # green-up: fast growth
@@ -101,7 +115,22 @@ pvecs <- list(G_init = mean(targets$gcc_90[1:7]),  # GCC guess = avg first 7 day
               t1=seq(30,70,length.out=5),   # Spring transition
               t2= )  # Summer transition
 
+## Could start for loop through sites here. What other info do we need for this? Check new method to estimate average day
 
+# Feed in parameter list, ssq function, target data, input data
+fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
+
+## Finish data fitting using optim function
+starts <- c(fit$par["G_init"],
+            fit$par["a"],fit$par["b"],
+            fit$par["t1"],fit$par["t2"])
+
+fit_fin <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
+
+## End for loop here and write site specific params to global environment and/or output folder for model params, which could then be used in the Forecast workflow
 
 ```
+
+### B. Uncertainty by replacing ssq with nll or with cross validation? 
+
 
