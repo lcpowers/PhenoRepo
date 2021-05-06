@@ -13,15 +13,16 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2) {
   
   gdd = GDD$GDDdaily
   total_days = GDD$GDDdays
-  rolling_avg = GDD$MovAvg_GDDdaily
+  gdd_total = GDD$GDDtotal
   date = GDD$date
-  time_inverse <- (1 / GDD$day)
+  days_passed <- GDD$day - GDD$day[1]
+  time_inverse <- 1/days_passed
   n <- length(gdd)
   
   # Parameters
-  beta <- a * (total_days > t1 & total_days <= t2)    # Green up
+  beta <- a * days_passed * (total_days > t1 & total_days <= t2)    # Green up
   
-  delta <- b * (total_days > t2)           # Leaf Maturation
+  delta <- b * time_inverse * (total_days > t2)           # Leaf Maturation
   
   # Create Data Frame
   output_df <- data.frame(date = GDD$date,
