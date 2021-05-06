@@ -51,7 +51,7 @@ GDD <- GDD %>% filter(day >= minDay & day <= maxDay) %>%
 
 # Now make sure that dates in Targets are also in GDD. 
 targets <- targets %>% filter(time %in% samedates)
-
+targets$year <- str_sub(targets$time,1,4) %>% as.factor()
 
 
 ## Data fitting process --------------------------------------------------------
@@ -75,9 +75,10 @@ ssq_phenmod <- function(p,y,GDD) {
 # G_init: avg of first 7 days of data
 avg_G_init = mean(targets$gcc_90[1:7]);
 # t2: Average GDDdays around peak time 
-avg_t2 = targets %>% filter(gcc_90 > 0.95*max(targets$gcc_90)) %>% 
-  summarize(mean_day = mean(day));
-avg_t2 <- floor(avg_t2$mean_day)          # approximate peak time
+avg_t2 = targets %>% 
+  group_by(year) %>% 
+  summarise(maxGCCday=day[gcc_90==max(gcc_90)]) 
+avg_t2 <- floor(mean(avg_t2$maxGCCday))          # approximate peak time
 avg_t2 <- GDD %>% filter(day == avg_t2)
 avg_t2 <- mean(avg_t2$GDDdays)            # avg GDD days passed at peak
 
