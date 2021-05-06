@@ -78,9 +78,9 @@ calcGDDfun <- function(temp_df,targets_df=targets,minT_colnum=4,maxT_colnum=5,wi
                                   tmax=year_df$daily_max,
                                   tbase = base_temp)
       
-      GDDtotal <- diffinv(year_df$GDDdaily,lag = 1)
+      GDDlag <- diffinv(year_df$GDDdaily,lag = 1)
       year_df <- year_df %>% 
-        dplyr::mutate(GDDtotal = GDDtotal[2:length(GDDtotal)],
+        dplyr::mutate(GDDtotal = GDDlag[2:length(GDDlag)],
                       GDDyesno = ifelse(year_df$GDDdaily>0,1,0),
                       GDDdays = rep(NA,nrow(.)),
                       base_temp = rep(base_temp,nrow(year_df)))
@@ -93,8 +93,12 @@ calcGDDfun <- function(temp_df,targets_df=targets,minT_colnum=4,maxT_colnum=5,wi
     gdd_df <- gdd_df %>% 
       mutate(MovAvg_GDDdaily = c(rep(NA,window_size-1),round(rollmean(GDDdaily,k=window_size),6)),
              MovAvg_GDDyesno = c(rep(NA,window_size-1),round(rollmean(GDDyesno,k=window_size),6)))
+    
+    gdd_df$daily_diff <- c(0,diff(gdd_df$GDDdaily))
+    
     output_df <- rbind(output_df,gdd_df)
   }
+  output_df$day <- yday(output_df$date)
   return(output_df)
 }
 
