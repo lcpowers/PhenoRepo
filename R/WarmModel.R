@@ -9,7 +9,7 @@
 # a, b, c, d = growth and death rates (fit)
 # t1, t2, t3, t4 = Timing thresholds (fit)
 
-WarmModel <- function(GDD,G_init,a,b,t1,t2) {
+WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
   
   gdd = GDD$GDDdaily
   total_days = GDD$GDDdays
@@ -35,7 +35,7 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2) {
   for ( i in 1:n ) {
     
     # Reset to initial conditions on 2/14 every year
-    ifelse (yday(GDD$date[i]) == yday(as.Date("02-14-18","%m-%d-%y")),
+    ifelse (str_detect(GDD$date[i],spring_date),
       # Initial conditions
       {
       output_df$G[i] = G_init

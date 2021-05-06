@@ -125,10 +125,10 @@ rm(all_wx,wx,x,site)
 
 sites <- unique(targets$siteID) %>% as.character()
 #sites = "GRSM"
-site = sites[4]
+site = sites[6]
 # Start and end dates of warm period
-spring_date <- "-01-31"
-fall_date <- "-09-15"
+spring_date <- "-02-24"
+fall_date <- "-09-01"
 
 # Start parameter fitting loop
 for(site in sites){
