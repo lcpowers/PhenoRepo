@@ -102,6 +102,9 @@ rm(neon_wx,noaa_wx)
 # Apply GDD function which will fill in missing temp data and calculate GDD values
 GDD <- calcGDDfun(temp_df=all_wx,targets_df = targets,int_method = "spline")
 
+# Add in day of year
+GDD$day <- yday(GDD$date)
+
 # For each site, check that target dates have matching weather dates
 for(site in sites){
   
@@ -153,8 +156,7 @@ for(site in sites){
     site_GDD <- filter(site_GDD, date >= as.Date("01-01-18","%m-%d-%y"))
   }
   ############################################################################
-  
-  
+
   # Find average GCC value in first seven days
   avg_G_init = mean(site_targs$gcc_90[1:7])
   
