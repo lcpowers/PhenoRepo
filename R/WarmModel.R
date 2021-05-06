@@ -1,13 +1,14 @@
-# Phenology Model - Spring and Summer Only
-
-# Input parameters:
-# t = day of year
-# gdd = daily growing degree day value
-# total_days = Accumulated number of growing degree days
-# rolling_avg = 7 day avg GDD 
-# G_init = Initial green value
-# a, b, c, d = growth and death rates (fit)
-# t1, t2, t3, t4 = Timing thresholds (fit)
+#' Phenology Model - Spring and Summer Only
+#'
+#' Input parameters:
+#' @param GDD daily growing degree day values
+#' @param G_init Initial green value
+#' @param a FIT 
+#' @param b FIT
+#' @param t1 FIT start greenup
+#' @param t2 FIT start leaf maturation
+#' @param spring_date Date to restart model each year. Should be in "-MM-DD" format, with dashes included
+#' 
 
 WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
   

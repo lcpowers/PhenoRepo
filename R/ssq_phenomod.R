@@ -1,3 +1,10 @@
+#' Used to find best fit parameters for WarmModel
+#' 
+#' @param p A set of input parameters for model being fit
+#' @param y Data that model is being fit to
+#' @param GDD Temperature data with GDD columns
+#' @param spring_date Date to restart model each year. Should be in "-MM-DD" format, with dashes included
+#' 
 
 # Sum of Squares Function - used to measure error
 ssq_phenmod <- function(p,y,GDD,spring_date) {

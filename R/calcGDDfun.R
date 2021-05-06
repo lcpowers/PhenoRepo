@@ -5,7 +5,7 @@
 #' @param minT_colnum
 #' @param maxT_colnum
 #' @param window_size default = 7
-#' 
+#' @param int_method Interpolation method used to fill in missing temp data. See function na_interpolation function for options
 #' 
 
 
