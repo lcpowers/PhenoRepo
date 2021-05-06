@@ -23,7 +23,7 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2) {
   # Parameters
   beta <- a * days_passed^2 * (total_days > t1 & total_days <= t2)    # Green up
   
-  delta <- b * gdd_days_passed * (total_days > t2)           # Leaf Maturation
+  delta <- b * time_inverse * (total_days > t2)           # Leaf Maturation
   
   # Create Data Frame
   output_df <- data.frame(date = GDD$date,

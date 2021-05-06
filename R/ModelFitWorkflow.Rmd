@@ -98,6 +98,9 @@ rm(neon_wx,noaa_wx)
 # Apply GDD function which will fill in missing temp data and calculate GDD values
 GDD <- calcGDDfun(temp_df=all_wx,targets_df = targets,int_method = "spline")
 
+# Add in day of year
+GDD$day <- yday(GDD$date)
+
 # For each site, check that target dates have matching weather dates
 for(site in sites){
   
