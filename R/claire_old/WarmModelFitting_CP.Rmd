@@ -5,6 +5,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+
 ```
 
 # Rmd setup
@@ -36,16 +38,15 @@ targets <- read.csv(here(file = 'data/pheno/GRSM/GRSM_gccTargets.csv')) %>%
          year = str_sub(time,1,4)) %>% # Convert to date format
   filter(time >= dayOne) 
 
-
 #### Start here ####
-x <- zoo(targets$gcc_90,targetsl$time)
-x <- na_interpolation(x, option = "linear") %>% as.data.frame() %>% rownames_to_column()
-colnames(x) <- c("time","gcc_90")
+x <- zoo(targets$gcc_90,targets$time)
+x <- na_interpolation(x, option = "spline") %>% as.data.frame() %>% rownames_to_column()
+colnames(x) <- c("time","gcc_90_2")
 x$time <- as.Date(x$time)
-targets$gcc_90 <- x$gcc_90
+
+targets <- merge(targets,x,by='time')
+
 #### End here ####
-
-
 ggplot(targets,aes(x=time))+
   geom_point(aes(y=gcc_90_2),color='green')+
   geom_point(aes(y=gcc_90),color='red')
@@ -54,7 +55,7 @@ ggplot(targets,aes(x=time))+
 
 # Read in Temperature-related data
 ```{r tempdata}
-temp_all <- read.csv(here(file = 'data/drivers/neon/GDDandtemp_allsites.csv')) %>%
+temp_all <- read_csv("data/drivers/neon/GDDandtemp_allsites.csv") %>%
   filter(siteID == 'GRSM') %>%  # Only consider GRSM site
   filter(date >= dayOne) %>% 
   mutate(day = yday(date),
