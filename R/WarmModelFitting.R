@@ -129,7 +129,7 @@ model_results$day <- yday(model_results$date)
 ggplot() +
   geom_point(data = targets, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
   geom_point(aes(x = as.Date(GDD$date), y = model_results$gcc_90), color = "red") +
-  labs(x="Day of year",y="GCC 90") +
+  labs(x="Day of year",y="GCC 90", title="Squaring days in exp growth") +
   theme_classic(base_size = 15)
 
 
