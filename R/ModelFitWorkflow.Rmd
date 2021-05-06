@@ -144,6 +144,15 @@ for(site in sites){
            date<=as.Date(paste0(year(date),fall_date)),
            date<=max(site_targs$time))
   
+  ###########################################################################
+  ####    Hardcoded this -- fix later  -------------------------------
+  # Remove 2017 for GRSM - that year is whack
+  if (site == "GRSM"){
+    site_targs <- filter(site_targs, time >= as.Date("01-01-18","%m-%d-%y"))
+    site_GDD <- filter(site_GDD, date >= as.Date("01-01-18","%m-%d-%y"))
+  }
+  ############################################################################
+  
   # Find average GCC value in first seven days
   avg_G_init = mean(site_targs$gcc_90[1:7])
   
@@ -207,7 +216,7 @@ for(site in sites){
   ggplot() +
     geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
     geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
-    labs(x="Day of year",y="GCC 90", title="PrNLL") +
+    labs(x="Day of year",y="GCC 90", title="1/gdd_days_passed") +
     theme_classic(base_size = 15)
 }
 
