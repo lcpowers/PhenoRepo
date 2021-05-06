@@ -25,6 +25,7 @@ source("R/calcGDDfun.R")
 source("R/WarmModel.R")
 source("R/gridsearch_Casey.R")
 source("R/ssq_phenomod.R")
+source("R/nll_phenomod.R")
 ```
 
 ## Update and read-in target data, then remove leading NAs and fill in others
@@ -54,12 +55,18 @@ for(site in sites){
   
   # Fill in other NAs
   x <- zoo(site_targs$gcc_90,site_targs$time)
-  x <- na_interpolation(x, option = "spline") %>% as.data.frame() %>% rownames_to_column()
+  x <- na_interpolation(x, option = "linear") %>% as.data.frame() %>% rownames_to_column()
   site_targs$gcc_90 <- x$.
   
   targets <- rbind(targets,site_targs)
   rm(site_targs,x)
 }
+
+targets$siteID <- as.factor(targets$siteID)
+targets$time <- as.Date(targets$time)
+targets$day <- yday(targets$time)
+targets$year <- substr(targets$time,1,4)
+
 # Remove extra vars from Global Env
 rm(target_fp,site,targets_raw)
 ```
@@ -68,6 +75,7 @@ rm(target_fp,site,targets_raw)
 ```{r NEONtempdata}
 
 ## Update NEON temperature data and read in. This will take A WHILE (2 hrs?), so only run this line if you really want to update weather data, otherwise keep it commented out and run the line the reads in the most recent temperature data
+
 # source("R/GetNEONwxdata.R")
 neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>% 
   select(siteID,date,daily_mean,daily_min,daily_max) %>% 
@@ -88,49 +96,120 @@ all_wx <- rbind(neon_wx,noaa_wx)
 rm(neon_wx,noaa_wx)
 
 # Apply GDD function which will fill in missing temp data and calculate GDD values
-GDD_df <- calcGDDfun(temp_df=all_wx,targets_df = targets,int_method = "spline")
+GDD <- calcGDDfun(temp_df=all_wx,targets_df = targets,int_method = "spline")
 
 # For each site, check that target dates have matching weather dates
 for(site in sites){
   
   targs <- filter(targets,siteID==site & time <= Sys.Date())
-  wx <- filter(GDD_df,siteID==site & date <= Sys.Date())
+  wx <- filter(GDD,siteID==site & date <= Sys.Date())
   x = as.Date(setdiff(as.Date(targs$time),as.Date(wx$date)))
   
   if(length(x)>0) print(paste0("Targets for ",site," missing wx for",x))
   
 }
-
+rm(all_wx,wx,x,site)
 ```
+
 
 ## I. Model fitting   
 ### a. Parameter fitting
 ```{r gridsearch}
-## Is there any reason for this list of vectors to be different for different sites?
 
-# list of parameter ranges
-pvecs <- list(G_init = mean(targets$gcc_90[1:7]),  # GCC guess = avg first 7 days of targets
-              a=seq(0,0.01,length.out=5),   # green-up: fast growth
-              b=seq(0,0.001,length.out=5),  # maturation
-              t1=seq(30,70,length.out=5),   # Spring transition
-              t2= )  # Summer transition
+# sites <- unique(targets$siteID)
+sites = "GRSM"
 
-## Could start for loop through sites here. What other info do we need for this? Check new method to estimate average day
+# Start and end dates of warm period
+spring_date <- "-02-14"
+fall_date <- "-08-31"
 
-# Feed in parameter list, ssq function, target data, input data
-fit <- gridsearch(pvecs, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
+# Start parameter fitting loop
+for(site in sites){
 
-## Finish data fitting using optim function
-starts <- c(fit$par["G_init"],
-            fit$par["a"],fit$par["b"],
-            fit$par["t1"],fit$par["t2"])
+  # Filter target data for site and warm period
+  site_targs <- targets %>% 
+    filter(siteID==site) %>% # Get site data
+    arrange(time) %>%  # make sure arranged by time
+    filter(time>=as.Date(paste0(year(time),spring_date)),
+           time<=as.Date(paste0(year(time),fall_date)))
+  
+  # Filter weather data for site and warm period
+  site_GDD <- GDD %>% 
+    filter(siteID==site) %>% # Get site data
+    arrange(date) %>%  # make sure arranged by time
+    filter(date>=as.Date(paste0(year(date),spring_date)),
+           date<=as.Date(paste0(year(date),fall_date)),
+           date<=max(site_targs$time))
+  
+  # Find average GCC value in first seven days
+  avg_G_init = mean(site_targs$gcc_90[1:7])
+  
+  # Find day of year (across years) when highest GCC occurs 
+  avg_t2_day = site_targs %>% 
+    group_by(year) %>% 
+    filter(year != 2021) %>% # Maybe don't filter this for all sites? 
+    summarise(maxGCCday=day[gcc_90==max(gcc_90)]) %>% 
+    summarise(avg_maxGCCday=floor(mean(maxGCCday))) %>% 
+    as.numeric()
+  
+  # Find the average number of GDD days that has occurred up to that point
+  avg_t2 <- filter(site_GDD,day==avg_t2_day) %>% 
+    summarise(mean(GDDdays)) %>% as.numeric()
+  
+  # list of parameter ranges                             
+  pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
+              a=seq(0,0.001,length.out=10),   # green-up: fast growth
+              b=seq(0,0.0001,length.out=10),  # maturation
+              t1=seq(30,70,length.out=10),   # Spring transition
+              t2 = avg_t2)  # Summer transition = avg date of peak GCC
+  
+  # First pass at parameter fitting using gridsearch and SSQ
+  gridsearch_fit <- gridsearch(pvecs, ssq_phenmod, y=site_targs$gcc_90, GDD=site_GDD)
+  
+  ####### DELETE EVENTUALLY: NLL fit attempts
+  # # First pass at parameter fitting using gridsearch and NLL
+  # pvecs$sd <- mean(targs$gcc_sd,na.rm=T)
+  # gridsearch_fit <- gridsearch(pvecs, nll_phenmod, y=site_targs$gcc_90, GDD = site_GDD, targets=site_targs)
+  ####### DELETE EVENTUALLY: NLL fit attempts
+  
+  # SSQ: Set of starting parameters for optim to use
+  # SSQ OPTIM FIT
+  optim_starts <- c(gridsearch_fit$par["G_init"],
+                    gridsearch_fit$par["a"],
+                    gridsearch_fit$par["b"],
+                    gridsearch_fit$par["t1"],
+                    gridsearch_fit$par["t2"])
+  optim_fit <- optim(optim_starts,ssq_phenmod,y=site_targs$gcc_90, GDD = site_GDD)
+  
+  # NLL OPTIM FIT
+  # optim_starts <- c(gridsearch_fit$par["G_init"],
+  #                   gridsearch_fit$par["a"],
+  #                   gridsearch_fit$par["b"],
+  #                   gridsearch_fit$par["t1"],
+  #                   gridsearch_fit$par["t2"],
+  #                   gridsearch_fit$par["sd"])
+  # optim_fit <- optim(optim_starts,nll_phenmod,y=site_targs$gcc_90,GDD=site_GDD, targets=site_targs)
+  
+  # Plot results
+  # GDD Warm Model Results
+  G_init = optim_fit$par["G_init"]
+  a = optim_fit$par["a"]
+  b = optim_fit$par["b"]
+  t1 = optim_fit$par["t1"]
+  t2 = optim_fit$par["t2"]
+  
+  model_results <-  WarmModel(site_GDD,G_init,a,b,t1,t2)
+  colnames(model_results)[2] <- "gcc_90"
+  model_results$day <- yday(model_results$date)
+  ggplot() +
+    geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
+    geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
+    labs(x="Day of year",y="GCC 90", title="PrNLL") +
+    theme_classic(base_size = 15)
+}
 
-fit_fin <- optim( starts, ssq_phenmod, y=targets$gcc_90, GDD = GDD)
-
-## End for loop here and write site specific params to global environment and/or output folder for model params, which could then be used in the Forecast workflow
 
 ```
 
 ### B. Uncertainty by replacing ssq with nll or with cross validation? 
-
 
