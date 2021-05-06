@@ -77,6 +77,7 @@ avg_G_init = mean(targets$gcc_90[1:7]);
 # t2: Average GDDdays around peak time 
 avg_t2 = targets %>% 
   group_by(year) %>% 
+  filter(year != 2021) %>%
   summarise(maxGCCday=day[gcc_90==max(gcc_90)]) 
 avg_t2 <- floor(mean(avg_t2$maxGCCday))          # approximate peak time
 avg_t2 <- GDD %>% filter(day == avg_t2)
