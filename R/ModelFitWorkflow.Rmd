@@ -9,14 +9,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Packages
 ```{r packages}
+rm(list=ls())
 
 library(here)
 library(lubridate)
 library(tidyverse)
 library(neon4cast)
 library(neonUtilities)
+library(zoo)
+library(imputeTS)
 
-rm(list=ls())
 ```
 
 # Update and read-in target data
@@ -39,10 +41,29 @@ rm(target_fp)
 # Update Temperature Data
 ```{r NEONtempdata}
 
-# Update NEON temperature data and read in. This will take a while, so only run this line if you want to update weather data, otherise keep it commented out and run the line the reads in the most recent temperature data
-source("R/GetNEONwxdata.R")
+## Update NEON temperature data and read in. This will take A WHILE (2 hrs?), so only run this line if you really want to update weather data, otherwise keep it commented out and run the line the reads in the most recent temperature data
+# source("R/GetNEONwxdata.R")
+neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>% 
+  select(siteID,date,daily_mean,daily_min,daily_max) %>% 
+  mutate(source='neon') %>% 
+  filter(date >= min(targets$time))
 
+## Update NOAA weather data. This will take a minute or two, but shouldn't take longer
+## When it finishes, should be a dataframe called noaa_wx in the global env
+# source("R/GetNOAAForecastData.R")
 
+## Or read in most recent pull of data
+noaa_wx <- read_csv("./data/drivers/noaa/noaa_temp_4cast_2021-05-05.csv")
+noaa_wx <- noaa_wx %>% 
+  select(siteID,date,daily_mean,daily_min,daily_max) %>% 
+  mutate(source='noaa')
+
+all_wx <- rbind(neon_wx,noaa_wx)
+rm(neon_wx,noaa_wx)
+
+# Apply GDD function which will fill in missing temp data and calculate GDD values
+source("R/calcGDDfun.R")
+GDD_df <- calcGDDfun(temp_df=all_wx,targets_df = targets)
 ```
 
 
