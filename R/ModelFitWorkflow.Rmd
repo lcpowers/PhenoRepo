@@ -129,6 +129,13 @@ site = sites[6]
 # Start and end dates of warm period
 spring_date <- "-02-24"
 fall_date <- "-09-01"
+# Dataframe to store fitted parameters for each site
+params_df <- data.frame(site = character(),
+                        G_init = double(),
+                        a = double(),
+                        b = double(),
+                        t1 = double(),
+                        t2 =  double())
 
 # Start parameter fitting loop
 for(site in sites){
@@ -207,6 +214,15 @@ for(site in sites){
   #                   gridsearch_fit$par["sd"])
   # optim_fit <- optim(optim_starts,nll_phenmod,y=site_targs$gcc_90,GDD=site_GDD, targets=site_targs)
   ####### DELETE EVENTUALLY: NLL fit attempts
+  
+  # Store results in dataframe
+  params_df$site <- site
+  params_df$G_init = optim_fit$par["G_init"]
+  params_df$a = optim_fit$par["a"]
+  params_df$b = optim_fit$par["b"]
+  params_df$t1 = optim_fit$par["t1"]
+  params_df$t2 = optim_fit$par["t2"]
+  
   
   # Plot results
   # GDD Warm Model Results
