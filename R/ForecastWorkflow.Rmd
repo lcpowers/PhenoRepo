@@ -20,6 +20,7 @@ library(neon4cast)
 library(neonUtilities)
 
 source("R/NEONscripts/publish.R")
+source("R/WarmModelForecast.R")
 ```
 
 ### Need these set to submit
