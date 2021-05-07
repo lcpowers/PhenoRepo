@@ -48,7 +48,7 @@ WarmModelForecast <- function(params,test_GDD,test_targs,spring_date){
   }
   
   forecast_df <- merge(test_targs,output_df,by.x = 'time',by.y='date') %>% 
-    select(time,year,siteID,obs_gcc_90=gcc_90,pred_gcc_90) %>% 
+    select(time,year,day,siteID,obs_gcc_90=gcc_90,pred_gcc_90) %>% 
     mutate(error=obs_gcc_90-pred_gcc_90)
   
   return(forecast_df)
