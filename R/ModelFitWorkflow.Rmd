@@ -171,13 +171,13 @@ for(site in sites){
   avg_t2_day = site_targs %>% 
     group_by(year) %>% 
     filter(year != 2021) %>% # Maybe don't filter this for all sites? 
-    summarise(maxGCCday=day[gcc_90==max(gcc_90)]) %>% 
-    summarise(avg_maxGCCday=floor(mean(maxGCCday))) %>% 
+    summarise(maxGCC=max(gcc_90)) %>% 
+    summarise(avg_maxGCC=mean(maxGCC)) %>% 
     as.numeric()
   
   # Find the average number of GDD days that has occurred up to that point
-  avg_t2 <- filter(site_GDD,day==avg_t2_day) %>% 
-    summarise(mean(GDDdays)) %>% as.numeric()
+  #avg_t2 <- filter(site_GDD,day==avg_t2_day) %>% 
+  #  summarise(mean(GDDdays)) %>% as.numeric()
   
   # list of parameter ranges                             
   pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
@@ -268,7 +268,7 @@ model_results <- model_results %>%
 
 
 ggplot() +
-    geom_ribbon(data = model_results, aes(x = date, ymin = gcc_90 - error, ymax = gcc_90 + error), color = "gray") +
+    #geom_ribbon(data = model_results, aes(x = date, ymin = gcc_90 - error, ymax = gcc_90 + error), color = "gray") +
     geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
     geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
     labs(x="Day of year",y="GCC 90",title="1/days") +
