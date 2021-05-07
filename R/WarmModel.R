@@ -14,17 +14,16 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
   
   gdd = GDD$GDDdaily
   total_days = GDD$GDDdays
-  gdd_total = GDD$GDDtotal
   date = GDD$date
   days_passed <- GDD$day - GDD$day[1] + 1
   gdd_days_passed <- GDD$GDDdays - min(GDD$GDDdays) + 1
-  time_inverse <- 1/gdd_days_passed
+  days_inverse <- 1/days_passed
   n <- length(gdd)
   
   # Parameters
   beta <- a * days_passed^2 * (total_days > t1 & total_days <= t2)    # Green up
   
-  delta <- b * time_inverse * (total_days > t2)           # Leaf Maturation
+  delta <- b * days_inverse * (total_days > t2)           # Leaf Maturation
   
   # Create Data Frame
   output_df <- data.frame(date = GDD$date,

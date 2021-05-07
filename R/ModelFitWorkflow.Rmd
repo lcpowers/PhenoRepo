@@ -222,7 +222,7 @@ for(site in sites){
   ggplot() +
     geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
     geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
-    labs(x="Day of year",y="GCC 90",title="1/gdd_days_passed") +
+    labs(x="Day of year",y="GCC 90",title="1/days") +
     theme_classic(base_size = 15)
 }
 
