@@ -154,15 +154,12 @@ for(site in sites){
     filter(date>=as.Date(paste0(year(date),spring_date)),
            date<=as.Date(paste0(year(date),fall_date)),
            date<=max(site_targs$time))
-  
-  ###########################################################################
-  ####    Hardcoded this -- fix later  -------------------------------
-  # Remove 2017 for GRSM - that year is whack
+
+  # Remove 2017 for GRSM 
   if (site == "GRSM"){
     site_targs <- filter(site_targs, time >= as.Date("01-01-18","%m-%d-%y"))
     site_GDD <- filter(site_GDD, date >= as.Date("01-01-18","%m-%d-%y"))
   }
-  ############################################################################
 
   # Find average GCC value in first seven days
   avg_G_init = mean(site_targs$gcc_90[1:7])
