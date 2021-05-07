@@ -9,14 +9,28 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Packages
 ```{r packages}
-
+# remotes::install_github("cboettig/prov")
+library(contentid)
+library(prov)
+library(aws.s3)
 library(here)
 library(lubridate)
 library(tidyverse)
 library(neon4cast)
 library(neonUtilities)
 
+source("R/NEONscripts/publish.R")
 ```
+
+### Need these set to submit
+```{r submitVars}
+## Set the following  env vars: 
+# AWS_ACCESS_KEY_ID=""
+# AWS_SECRET_ACCESS_KEY=""
+# AWS_DEFAULT_REGION="data"
+# AWS_S3_ENDPOINT="ecoforecast.org"
+```
+
 
 # Read in model parameters for each site
 # Read in NOAA temperature data
@@ -24,3 +38,19 @@ library(neonUtilities)
 # Forecast using NOAA temperature data -- make sure it's updated. Bring in temp code chunk from ModelFitWorkflow
 # Format to prepare for scoring
 # Submit forecasted data
+
+# Get into correct format for succesful submission
+```{r formatForSubmit}
+
+```
+
+# Submit forecast
+```{r submitForecast}
+
+publish(code = c("phenology-workflow.R", "nullModel_randomWalk_main.R", "randomWalkNullModelFunction.R"),
+        data_out = c(forecast_file_name),
+        prefix = "phenology/",
+        bucket = "forecasts")
+
+```
+
