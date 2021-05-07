@@ -230,4 +230,26 @@ for(site in sites){
 ```
 
 ### B. Uncertainty by replacing ssq with nll or with cross validation? 
+# Uncertainty calculated for all prior years and tested on 2020
+model_results$day <- yday(model_results$date)
+model_results$error <- NA
+
+# Calculate daily StDev from observed data and model prediction
+for (d in 1:244){
+  target_unc <- site_targs %>% filter(day == d & time < as.Date("01-01-20","%m-%d-%y") )
+  model_unc <- model_results %>% filter(day == d & date < as.Date("01-01-20","%m-%d-%y") )
+  ssq = 0
+  for (i in 1:nrow(target_unc)){
+    ssq = ssq + (target_unc$gcc_90[i] - model_unc$gcc_90[i])^2
+  }
+  error = sqrt(ssq/nrow(target_unc))
+  model_results$error[model_results$day==d]=error  
+}
+
+ggplot() +
+    geom_ribbon(data = model_results, aes(x = date, ymin = gcc_90 - error, ymax = gcc_90 + error), color = "gray") +
+    geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
+    geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
+    labs(x="Day of year",y="GCC 90",title="1/days") +
+    theme_classic(base_size = 15)
 
