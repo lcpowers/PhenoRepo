@@ -12,6 +12,7 @@
 
 WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
   
+  # GDD Input Data
   gdd = GDD$GDDdaily
   total_days = GDD$GDDdays
   date = GDD$date
@@ -20,10 +21,14 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
   days_inverse <- 1/days_passed
   n <- length(gdd)
   
-  # Parameters
-  beta <- a * days_passed^2 * (total_days > t1 & total_days <= t2)    # Green up
+  # Boolean for second epoch switch
+  summer_true = FALSE
+  spring_true = TRUE
   
-  delta <- b * days_inverse * (total_days > t2)           # Leaf Maturation
+  # Parameters
+  beta <- a * days_passed^2 * (total_days > t1)    # Green up
+  
+  delta <- b * days_inverse * (total_days > t1)           # Leaf Maturation
   
   # Create Data Frame
   output_df <- data.frame(date = GDD$date,
@@ -43,8 +48,18 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
       },
     # Otherwise, calculate following day from equations
       {
-      output_df$G[i] = (1 - delta[i]) * output_df$G[i-1] + beta[i] * output_df$N[i-1]
-      output_df$N[i] = (1 - beta[i]) * output_df$N[i-1] + delta[i] * output_df$G[i-1]
+        
+      # Update bool for second epoch switch 
+      if (spring_true & output_df$G[i-1] >= t2){
+        summer_true = TRUE
+        spring_true = FALSE
+      }
+        
+      # Generate time series data
+      output_df$G[i] = (1 - (delta[i] * summer_true)) * output_df$G[i-1] + 
+        beta[i] * spring_true * output_df$N[i-1]
+      output_df$N[i] = (1 - (beta[i] * spring_true)) * output_df$N[i-1] + 
+          delta[i] * summer_true * output_df$G[i-1]
     })
   }
   return(output_df)
