@@ -34,7 +34,7 @@ source("R/NEONscripts/publish.R")
 
 # Read in model parameters for each site
 # Read in NOAA temperature data
-# Read in target data?
+# Read in target data from previous date to inform G_init
 # Forecast using NOAA temperature data -- make sure it's updated. Bring in temp code chunk from ModelFitWorkflow
 # Format to prepare for scoring
 # Submit forecasted data
