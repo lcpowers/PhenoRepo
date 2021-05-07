@@ -245,6 +245,11 @@ for (d in 1:244){
   error = sqrt(ssq/nrow(target_unc))
   model_results$error[model_results$day==d]=error  
 }
+# Calculate 7 day rolling average of error
+model_results <- model_results %>%
+  arrange(date) %>%
+  mutate(error = rollmean(error, k=3, fill = NA))
+
 
 ggplot() +
     geom_ribbon(data = model_results, aes(x = date, ymin = gcc_90 - error, ymax = gcc_90 + error), color = "gray") +
