@@ -3,6 +3,12 @@ title: "Workflow through Model Fitting"
 output: html_document
 ---
 
+## To do's:
+# Figure out why parameter dataframe isn't working
+# Troubleshoot uncertainty
+# Run robust gridsearch
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(root.dir="/home/claire/Git/PhenoRepo/")
