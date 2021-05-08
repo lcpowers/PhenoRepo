@@ -121,7 +121,7 @@ for(site in sites){
   if(length(x)>0) print(paste0("Targets for ",site," missing wx for",x))
   
 }
-rm(all_wx,wx,x,site)
+rm(all_wx,wx,x,site,targs)
 ```
 
 
@@ -135,13 +135,12 @@ site = sites[6]
 # Start and end dates of warm period
 spring_date <- "-02-24"
 fall_date <- "-09-01"
+n_params <- 5 # Number of parameters being stored for the model
 # Dataframe to store fitted parameters for each site
-params_df <- data.frame(site = character(),
-                        G_init = double(),
-                        a = double(),
-                        b = double(),
-                        green_up = double(),
-                        G_max =  double())
+params_df <- as.data.frame(matrix(data=NA,
+                                  nrow = n_distinct(sites),
+                                  ncol=n_params+1))
+colnames(params_df)<-c("siteID","G_init","a","b","green_up","G_max")
 
 # Start parameter fitting loop
 for(site in sites){
@@ -198,12 +197,12 @@ for(site in sites){
   optim_fit <- optim(optim_starts,ssq_phenmod,y=site_targs$gcc_90, GDD = site_GDD,spring_date=spring_date)
   
   # Store results in dataframe
-  params_df$site <- site
-  params_df$G_init = optim_fit$par["G_init"]
-  params_df$a = optim_fit$par["a"]
-  params_df$b = optim_fit$par["b"]
-  params_df$green_up = optim_fit$par["green_up"]
-  params_df$G_max = optim_fit$par["G_max"]
+  params_df$siteID[which(sites==site)] <- site
+  params_df$G_init[which(sites==site)] = optim_fit$par["G_init"]
+  params_df$a[which(sites==site)] = optim_fit$par["a"]
+  params_df$b[which(sites==site)] = optim_fit$par["b"]
+  params_df$green_up[which(sites==site)] = optim_fit$par["green_up"]
+  params_df$G_max[which(sites==site)] = optim_fit$par["G_max"]
   
   # Plot results
   # GDD Warm Model Results
@@ -229,15 +228,20 @@ for(site in sites){
 ### B. Uncertainty estimation with cross validation
 ```{r CrossValidation}
 
-# sites <- unique(targets$siteID) %>% as.character()
-sites = "GRSM"
-# site = sites[6]
+sites <- unique(targets$siteID) %>% as.character()
+site = sites[6]
+
 # Start and end dates of warm period
 spring_date <- "-02-24"
 fall_date <- "-09-01"
+
 # Dataframe to store fitted parameters for each site
 cv_params_df <- NULL
-error_df <- data.frame(day=seq(yday(paste0('2021',spring_date)),yday(paste0('2021',fall_date))))
+
+# Start a data.frame to store errors, that contains a column for date. The
+# temporary error data.frames in each loop will be merged into this one using date as the join key
+error_df <- data.frame(date=seq(as.Date(paste0('2021',spring_date)),
+                               as.Date(paste0('2021',fall_date)),by='day'))
 
 # Start parameter fitting loop
 for(site in sites){
@@ -316,16 +320,17 @@ for(site in sites){
                    a = optim_fit$par["a"],
                    b = optim_fit$par["b"],
                    green_up = optim_fit$par["green_up"],
-                   G_max = optim_fit$par["G_max"])
+                   G_max = optim_fit$par["G_max"],
+                   spring_date=spring_date)
     
     yeari_forecast <- WarmModelForecast(params=params,
                                         test_GDD = test_GDD,
                                         test_targs = test_targs,
                                         spring_date = spring_date)
     
-    tmp_error <- yeari_forecast %>% select(day,error)
+    tmp_error <- yeari_forecast %>% select(time,error)
                     
-    error_df <- merge(error_df,tmp_error,by='day',all=TRUE)
+    error_df <- merge(error_df,tmp_error,by.x='date',by.y='time' ,all=TRUE)
     colnames(error_df)[ncol(error_df)] <- c(paste0(site,as.character(yeari)))
     
     }
