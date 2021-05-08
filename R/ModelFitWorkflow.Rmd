@@ -134,8 +134,8 @@ params_df <- data.frame(site = character(),
                         G_init = double(),
                         a = double(),
                         b = double(),
-                        t1 = double(),
-                        t2 =  double())
+                        green_up = double(),
+                        G_max =  double())
 
 # Start parameter fitting loop
 for(site in sites){
@@ -164,24 +164,20 @@ for(site in sites){
   # Find average GCC value in first seven days
   avg_G_init = mean(site_targs$gcc_90[1:7])
   
-  # Find day of year (across years) when highest GCC occurs 
-  avg_t2_day = site_targs %>% 
+  # Find average maximum GCC 
+  avg_G_max = site_targs %>% 
     group_by(year) %>% 
     filter(year != 2021) %>% # Maybe don't filter this for all sites? 
     summarise(maxGCC=max(gcc_90)) %>% 
     summarise(avg_maxGCC=mean(maxGCC)) %>% 
     as.numeric()
   
-  # Find the average number of GDD days that has occurred up to that point
-  #avg_t2 <- filter(site_GDD,day==avg_t2_day) %>% 
-  #  summarise(mean(GDDdays)) %>% as.numeric()
-  
   # list of parameter ranges                             
   pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
-              a=seq(0,0.001,length.out=10),   # green-up: fast growth
-              b=seq(0,0.0001,length.out=10),  # maturation
-              t1=seq(30,70,length.out=10),   # Spring transition
-              t2 = avg_t2_day)  # Summer transition = avg date of peak GCC
+              a=seq(0,0.01,length.out=10),   # green-up: fast growth
+              b=seq(0,0.2,length.out=10),  # maturation
+              green_up=seq(30,70,length.out=10),   # Spring transition
+              G_max = avg_G_max)  # Summer transition = max GCC avg each year
   
   # First pass at parameter fitting using gridsearch and SSQ
   gridsearch_fit <- gridsearch(pvecs, ssq_phenmod, y=site_targs$gcc_90,GDD=site_GDD,spring_date=spring_date)
@@ -191,8 +187,8 @@ for(site in sites){
   optim_starts <- c(gridsearch_fit$par["G_init"],
                     gridsearch_fit$par["a"],
                     gridsearch_fit$par["b"],
-                    gridsearch_fit$par["t1"],
-                    gridsearch_fit$par["t2"])
+                    gridsearch_fit$par["green_up"],
+                    gridsearch_fit$par["G_max"])
   optim_fit <- optim(optim_starts,ssq_phenmod,y=site_targs$gcc_90, GDD = site_GDD,spring_date=spring_date)
   
   # Store results in dataframe
@@ -200,24 +196,24 @@ for(site in sites){
   params_df$G_init = optim_fit$par["G_init"]
   params_df$a = optim_fit$par["a"]
   params_df$b = optim_fit$par["b"]
-  params_df$t1 = optim_fit$par["t1"]
-  params_df$t2 = optim_fit$par["t2"]
+  params_df$green_up = optim_fit$par["green_up"]
+  params_df$G_max = optim_fit$par["G_max"]
   
   # Plot results
   # GDD Warm Model Results
   G_init = optim_fit$par["G_init"]
   a = optim_fit$par["a"]
   b = optim_fit$par["b"]
-  t1 = optim_fit$par["t1"]
-  t2 = optim_fit$par["t2"]
+  green_up = optim_fit$par["green_up"]
+  G_max = optim_fit$par["G_max"]
   
-  model_results <-  WarmModel(site_GDD,G_init,a,b,t1,t2,spring_date = spring_date)
+  model_results <-  WarmModel(site_GDD,G_init,a,b,green_up,G_max,spring_date = spring_date)
   colnames(model_results)[2] <- "gcc_90"
   model_results$day <- yday(model_results$date)
   ggplot() +
     geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
     geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
-    labs(x="Day of year",y="GCC 90",title="1/days") +
+    labs(x="Day of year",y="GCC 90",title="Model Fit") +
     theme_classic(base_size = 15)
 }
 
@@ -273,24 +269,20 @@ for(site in sites){
     # Find average GCC value in first seven days
     avg_G_init = mean(training_targs$gcc_90[1:7])
     
-    # Find day of year (across years) when highest GCC occurs 
-    avg_t2_day = site_targs %>% 
+    # Find average maximum GCC 
+    avg_G_max = training_targs %>% 
       group_by(year) %>% 
       filter(year != 2021) %>% # Maybe don't filter this for all sites? 
-      summarise(maxGCCday=day[gcc_90==max(gcc_90)]) %>% 
-      summarise(avg_maxGCCday=floor(mean(maxGCCday))) %>% 
+      summarise(maxGCC=max(gcc_90)) %>% 
+      summarise(avg_maxGCC=mean(maxGCC)) %>% 
       as.numeric()
-      
-    # Find the average number of GDD days that has occurred up to that point
-    avg_t2 <- filter(site_GDD,day==avg_t2_day) %>%
-     summarise(mean(GDDdays)) %>% as.numeric()
     
     # list of parameter ranges                             
     pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
-                a=seq(0,0.001,length.out=10),   # green-up: fast growth
-                b=seq(0,0.0001,length.out=10),  # maturation
-                t1=seq(10,70,length.out=10),   # Spring transition
-                t2 = avg_t2)  # Summer transition = avg date of peak GCC
+              a=seq(0,0.01,length.out=10),   # green-up: fast growth
+              b=seq(0,0.2,length.out=10),  # maturation
+              green_up=seq(30,70,length.out=10),   # Spring transition
+              G_max = avg_G_max)  # Summer transition = avg date of peak GCC
     
     # First pass at parameter fitting using gridsearch and SSQ
     gridsearch_fit <- gridsearch(pvecs, ssq_phenmod,y=training_targs$gcc_90,GDD=training_GDD,spring_date=spring_date)
@@ -299,8 +291,8 @@ for(site in sites){
     optim_starts <- c(gridsearch_fit$par["G_init"],
                       gridsearch_fit$par["a"],
                       gridsearch_fit$par["b"],
-                      gridsearch_fit$par["t1"],
-                      gridsearch_fit$par["t2"])
+                      gridsearch_fit$par["green_up"],
+                      gridsearch_fit$par["G_max"])
     optim_fit <- optim(optim_starts,ssq_phenmod,y=training_targs$gcc_90, GDD = training_GDD,spring_date=spring_date)
     
     # Store parameters in data frame
@@ -309,16 +301,16 @@ for(site in sites){
                              G_init = optim_fit$par["G_init"],
                              a = optim_fit$par["a"],
                              b = optim_fit$par["b"],
-                             t1 = optim_fit$par["t1"],
-                             t2 = optim_fit$par["t2"])
+                             green_up = optim_fit$par["green_up"],
+                             G_max = optim_fit$par["G_max"])
     cv_params_df <- rbind(cv_params_df,tmp_params)
     
     # Make list of parameters to feed into WarmModelForecast function
     params <- list(G_init = optim_fit$par["G_init"],
                    a = optim_fit$par["a"],
                    b = optim_fit$par["b"],
-                   t1 = optim_fit$par["t1"],
-                   t2 = optim_fit$par["t2"])
+                   green_up = optim_fit$par["green_up"],
+                   G_max = optim_fit$par["G_max"])
     
     yeari_forecast <- WarmModelForecast(params=params,
                                         test_GDD = test_GDD,
@@ -344,33 +336,4 @@ ggplot(yeari_forecast,aes(x=time))+
   # geom_ribbon((aes(ymax=pred_gcc_90+abs(deviation),ymin=pred_gcc_90-abs(deviation))),alpha=0.5)+
   theme_classic()
 ```
-
-
-# Uncertainty calculated for all prior years and tested on 2020
-model_results$day <- yday(model_results$date)
-model_results$error <- NA
-
-# Calculate daily StDev from observed data and model prediction
-for (d in 1:244){
-  target_unc <- site_targs %>% filter(day == d & time < as.Date("01-01-20","%m-%d-%y") )
-  model_unc <- model_results %>% filter(day == d & date < as.Date("01-01-20","%m-%d-%y") )
-  ssq = 0
-  for (i in 1:nrow(target_unc)){
-    ssq = ssq + (target_unc$gcc_90[i] - model_unc$gcc_90[i])^2
-  }
-  error = sqrt(ssq/nrow(target_unc))
-  model_results$error[model_results$day==d]=error  
-}
-# Calculate 7 day rolling average of error
-model_results <- model_results %>%
-  arrange(date) %>%
-  mutate(error = rollmean(error, k=3, fill = NA))
-
-
-ggplot() +
-    #geom_ribbon(data = model_results, aes(x = date, ymin = gcc_90 - error, ymax = gcc_90 + error), color = "gray") +
-    geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
-    geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
-    labs(x="Day of year",y="GCC 90",title="1/days") +
-    theme_classic(base_size = 15)
 
