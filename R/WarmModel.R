@@ -5,8 +5,8 @@
 #' @param G_init Initial green value
 #' @param a FIT 
 #' @param b FIT
-#' @param t1 FIT start greenup
-#' @param t2 FIT start leaf maturation
+#' @param green_up FIT start greenup
+#' @param G_max FIT start leaf maturation
 #' @param spring_date Date to restart model each year. Should be in "-MM-DD" format, with dashes included
 #' 
 
@@ -18,7 +18,7 @@ WarmModel <- function(GDD,G_init,a,b,green_up,G_max,spring_date) {
   date = GDD$date
   days_passed <- GDD$day
   gdd_days_passed <- GDD$GDDdays
-  days_inverse <- 1/gdd_days_passed
+  days_inverse <- ifelse(gdd_days_passed>0,1/gdd_days_passed,0)
   n <- length(gdd)
   
   # Parameters
@@ -31,7 +31,6 @@ WarmModel <- function(GDD,G_init,a,b,green_up,G_max,spring_date) {
                           G = rep(NA,n),
                           N = rep(NA,n))
 
-  
   # Model sim
   for ( i in 1:n ) {
     
