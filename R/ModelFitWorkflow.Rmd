@@ -130,10 +130,12 @@ rm(all_wx,wx,x,site,targs)
 sites <- unique(targets$siteID) %>% as.character()
 #sites = "GRSM"
 site = sites[6]
+
 # Start and end dates of warm period
 spring_date <- "-02-24"
 fall_date <- "-09-01"
 n_params <- 5 # Number of parameters being stored for the model
+
 # Dataframe to store fitted parameters for each site
 params_df <- as.data.frame(matrix(data=NA,
                                   nrow = n_distinct(sites),
@@ -177,13 +179,13 @@ for(site in sites){
   
   # list of parameter ranges                             
   pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
-              a=seq(0,0.01,length.out=50),   # green-up: fast growth
-              b=seq(0,0.2,length.out=50),  # maturation
-              green_up=seq(10,70,length.out=50),   # Spring transition
+              a=seq(0,0.01,length.out=10),   # green-up: fast growth
+              b=seq(0,0.2,length.out=10),  # maturation
+              green_up=seq(10,70,length.out=10),   # Spring transition
               G_max = avg_G_max)  # Summer transition = max GCC avg each year
   
   # First pass at parameter fitting using gridsearch and SSQ
-  gridsearch_fit <- gridsearch(pvecs, ssq_phenmod, y=site_targs$gcc_90,GDD=site_GDD,spring_date=spring_date)
+  gridsearch_fit <- gridsearch(pvecs, ssq_phenmod, y=site_targs$gcc_90, GDD=site_GDD, spring_date=spring_date)
   
   # SSQ: Set of starting parameters for optim to use
   # SSQ OPTIM FIT
@@ -192,7 +194,7 @@ for(site in sites){
                     gridsearch_fit$par["b"],
                     gridsearch_fit$par["green_up"],
                     gridsearch_fit$par["G_max"])
-  optim_fit <- optim(optim_starts,ssq_phenmod,y=site_targs$gcc_90, GDD = site_GDD,spring_date=spring_date)
+  optim_fit <- optim(optim_starts, ssq_phenmod, y=site_targs$gcc_90, GDD=site_GDD, spring_date=spring_date)
   
   # Store results in dataframe
   params_df$siteID[which(sites==site)] <- site
@@ -213,14 +215,16 @@ for(site in sites){
   model_results <-  WarmModel(site_GDD,G_init,a,b,green_up,G_max,spring_date = spring_date)
   colnames(model_results)[2] <- "gcc_90"
   model_results$day <- yday(model_results$date)
-  ggplot() +
-    geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
-    geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
-    labs(x="Day of year",y="GCC 90",title="Model Fit") +
-    theme_classic(base_size = 15)
+  fitPlot <- ggplot() +
+        geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
+        geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
+        labs(x="Day of year",y="GCC 90",title=paste0(site, " Model Fit")) +
+        theme_classic(base_size = 15)
+  
+  print(fitPlot)
 }
 
-
+write.csv(params_df,"data/model/model_params.csv")
 ```
 
 Plot gridsearch surface
