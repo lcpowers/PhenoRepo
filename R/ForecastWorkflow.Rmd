@@ -40,6 +40,8 @@ source("R/WarmModelForecast.R")
 # Format to prepare for scoring
 # Submit forecasted data
 
+# Forecast GCC
+
 # Get into correct format for succesful submission
 ```{r formatForSubmit}
 

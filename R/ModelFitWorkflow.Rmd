@@ -4,8 +4,6 @@ output: html_document
 ---
 
 ## To do's:
-# Figure out why parameter dataframe isn't working
-# Troubleshoot uncertainty
 # Run robust gridsearch
 
 
@@ -179,9 +177,9 @@ for(site in sites){
   
   # list of parameter ranges                             
   pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
-              a=seq(0,0.01,length.out=10),   # green-up: fast growth
-              b=seq(0,0.2,length.out=10),  # maturation
-              green_up=seq(30,70,length.out=10),   # Spring transition
+              a=seq(0,0.01,length.out=50),   # green-up: fast growth
+              b=seq(0,0.2,length.out=50),  # maturation
+              green_up=seq(10,70,length.out=50),   # Spring transition
               G_max = avg_G_max)  # Summer transition = max GCC avg each year
   
   # First pass at parameter fitting using gridsearch and SSQ
@@ -224,6 +222,15 @@ for(site in sites){
 
 
 ```
+
+Plot gridsearch surface
+```{r}
+
+
+
+
+```
+
 
 ### B. Uncertainty estimation with cross validation
 ```{r CrossValidation}
@@ -332,6 +339,7 @@ for(site in sites){
                     
     error_df <- merge(error_df,tmp_error,by.x='date',by.y='time' ,all=TRUE)
     colnames(error_df)[ncol(error_df)] <- c(paste0(site,as.character(yeari)))
+    rm(tmp_params,tmp_error)
     
     }
 
