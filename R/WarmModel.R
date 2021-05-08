@@ -21,10 +21,6 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
   days_inverse <- 1/days_passed
   n <- length(gdd)
   
-  # Boolean for second epoch switch
-  summer_true = FALSE
-  spring_true = TRUE
-  
   # Parameters
   beta <- a * days_passed^2 * (total_days > t1)    # Green up
   
@@ -41,8 +37,13 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
     
     # Reset to initial conditions on 2/14 every year
     ifelse (str_detect(GDD$date[i],spring_date),
-      # Initial conditions
+    # If start of year, initialize values
       {
+      # Boolean for second epoch switch
+      summer_true = FALSE
+      spring_true = TRUE
+      
+      # Initial conditions
       output_df$G[i] = G_init
       output_df$N[i] = 1 - G_init
       },
@@ -50,7 +51,7 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
       {
         
       # Update bool for second epoch switch 
-      if (spring_true & output_df$G[i-1] >= t2){
+      if (isTRUE(spring_true) & isTRUE(output_df$G[i-1] >= t2)){
         summer_true = TRUE
         spring_true = FALSE
       }
@@ -60,6 +61,11 @@ WarmModel <- function(GDD,G_init,a,b,t1,t2,spring_date) {
         beta[i] * spring_true * output_df$N[i-1]
       output_df$N[i] = (1 - (beta[i] * spring_true)) * output_df$N[i-1] + 
           delta[i] * summer_true * output_df$G[i-1]
+      
+      
+      # Print Statement
+      #xi = paste("beta = ", spring_true,"; delta = ", summer_true)
+      #print(xi)
     })
   }
   return(output_df)
