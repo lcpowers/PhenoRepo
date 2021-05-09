@@ -20,6 +20,8 @@ library(lubridate)
 library(tidyverse)
 library(neon4cast)
 library(neonUtilities)
+library(zoo)
+library(imputeTS)
 
 source("R/NEONscripts/publish.R")
 source("R/WarmModelForecast.R")
@@ -47,15 +49,16 @@ if(as.Date(file.info(target_fp)$ctime)!=Sys.Date()) {
     }
 
 targets <- read.csv(target_fp,header=TRUE) %>% 
-  filter(time >= "2021-01-01")
-targets$siteID <- as.factor(targets$siteID)
-targets$time <- as.Date(targets$time)
+  filter(time >= "2021-01-01") %>% 
+  mutate(siteID=as.factor(siteID),
+         time=as.Date(time))
 
 model_params <- read_csv("data/model/model_params.csv")
+sites <- unique(targets$siteID)
 ```
 
 
-# Read in NOAA temperature data
+# Read in temperature data
 ```{r wxData}
 ## Update NEON temperature data and read in. This will take A WHILE (2 hrs?), so only run this line if you really want to update weather data, otherwise keep it commented out and run the line the reads in the most recent temperature data
 
@@ -67,7 +70,7 @@ neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>%
 
 ## Update NOAA weather data. This will take a minute or two, but shouldn't take longer
 ## When it finishes, should be a dataframe called noaa_wx in the global env
-# source("R/GetNOAAForecastData.R")
+source("R/GetNOAAForecastData.R")
 noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
 ## Or read in most recent pull of data
@@ -105,11 +108,11 @@ GDD <- filter(GDD,date>=Sys.Date())
 ```{r forecastGCC}
 sites <- unique(targets$siteID)
 forecast_df <- NULL
-spring_date = "-05-08"
+spring_date = str_sub(Sys.Date(),5,10)
 
 for(site in sites){
   
-  site_targs <- targets %>% filter(siteID==site) %>% filter(time>=(Sys.Date()-7))
+  site_targs <- targets %>% filter(siteID==site) %>% filter(time>=(Sys.Date()-1))
   site_GDD <- GDD %>% filter(siteID==site&date>=Sys.Date())
   
   site_params <- model_params %>% filter(siteID==site)
@@ -128,12 +131,15 @@ for(site in sites){
   
 }
 
-targets <- read.csv(target_fp,header=TRUE) 
-
+# Read full targets DF in to rbind to forecasted gcc values and plot
+targets <- read.csv(target_fp,header=TRUE) %>% 
+  mutate(time = as.Date(time),
+         source=as.factor("targets"),
+         siteID = as.factor(siteID))
 all_gcc <- rbind(targets,forecast_df)
 
 ggplot(all_gcc,aes(x=time,y=gcc_90))+
-  geom_point()+
+  geom_point(aes(color=source))+
   facet_wrap(~siteID)
 ```
 
