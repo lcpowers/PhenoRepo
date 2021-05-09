@@ -1,11 +1,13 @@
 #' Function to predict GCC using parameters fit to warm model
 #' 
-#' @param params
-#' @param test_GDD
-#' @param test_targs
-#' @param spring_date
+#' @param params Model fit parameters from the gridsearch-optim workflow
+#' @param test_GDD GDD data for test period
+#' @param test_targs Target data for test period
+#' @param spring_date Data to start warm period
+#' @param cross_validation This option returns a dataframe with an error column
 #' 
-#' 
+#' @return A data.frame forecasted GCC values with columns based on cross_validation setting used. 
+#'  
 
 
 WarmModelForecast <- function(params,GDD,targets,spring_date,cross_validation=FALSE) {
