@@ -36,15 +36,6 @@ forecast_file=paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/fore
 ```
 
 
-### Need these set to submit
-```{r submitVars}
-## Set the following  env vars: 
-# AWS_SECRET_ACCESS_KEY=""
-# AWS_DEFAULT_REGION="data"
-# AWS_S3_ENDPOINT="ecoforecast.org"
-```
-
-
 ## I. Read in target data
 ```{r targetData}
 # Update target data if not yet updated today 
@@ -153,38 +144,30 @@ for(site in sites){
 error_df <- read_csv("data/model/model_errors.csv") %>% 
   mutate(forecast_day = seq(1:nrow(.)))
 
-# Restructure error df from wide to long 
+# Restructure error df from wide to long format
 error_melt <- melt(error_df,id.vars = c("dayofyear","forecast_day"), value.name = "deviation") %>% 
   mutate(siteID = as.factor(str_sub(variable,1,4)),
          year=str_sub(variable,5,8)) %>% 
   select(dayofyear,forecast_day,siteID,year,deviation) %>% 
   filter(complete.cases(.)) # Remove any rows with NAs / Keep complete rows
-
-ggplot(error_melt,aes(x=forecast_day,y=deviation))+
-  geom_point(alpha=0.5)+
-  geom_smooth()
   
 MSQerror_df <- error_melt %>% 
   group_by(forecast_day,siteID) %>% # For each forecast day....
   summarise(MSQerror = mean(deviation^2)) #...find the mean square error of the deviations (y.obs-y.pred)
-
-ggplot(subset(MSQerror_df,forecast_day<=35), aes(x=forecast_day,y=MSQerror))+
-  geom_point(alpha=0.5)+
-  geom_smooth()
 
 # Create simple linear regression model of errors using forecast_day as predictor variable
 error_lm <- lm(MSQerror~forecast_day+siteID,data=subset(MSQerror_df,forecast_day<=50))
 summary(error_lm)
 
 # Add error to forecast df
-forecast_df$gcc_sd <- predict(error_lm,newdata = forecast_df)*50
-plot(forecast_df$forecast_day,forecast_df$gcc_sd)
+forecast_df$gcc_sd <- predict(error_lm, newdata = forecast_df)*50
 ```
 
 
 # V. Plot forecasted GCC with targets and uncertainty
 ```{r plotForecast}
 # Read full targets DF in to rbind to forecasted gcc values and plot
+
 targets <- read.csv(target_fp,header=TRUE) %>% 
   mutate(time = as.Date(time),
          source=as.factor("targets"),
@@ -195,15 +178,18 @@ forecast_df$source<-"forecast"
 all_gcc <- rbind(targets,forecast_df[,c(1:4,6)]) %>% 
   mutate(year = year(time)) # Add year column to subset plot
   
-ggplot(subset(all_gcc,time>="2019-01-01"), aes(x=time,y=gcc_90))+
-  geom_point(aes(color=source),alpha=0.75)+
-  geom_ribbon(data = subset(all_gcc,time>="2021-05-01"),
+ggplot(subset(all_gcc,time>="2020-01-01"), aes(x=time,y=gcc_90))+
+  geom_point(aes(color=source),alpha=0.9)+
+  geom_ribbon(data = subset(all_gcc,time>="2021-05-05"),
               mapping = aes(x=time,ymin=gcc_90-gcc_sd,ymax=gcc_90+gcc_sd,color=source,fill=source),alpha=0.75)+
   facet_wrap(~siteID)+
   theme_classic(base_size = 16)+
-  scale_color_manual(values=c("grey60","springgreen4"),labels=c("Observed","Forecasted"))+
-  scale_fill_manual(values=c("grey60","springgreen4"),labels=c("Observed","Forecasted"))+
+  scale_color_manual(values=c("springgreen4","coral3"),labels=c("Observed","Forecasted"))+
+  scale_fill_manual(values=c("springgreen4","coral3"),labels=c("Observed","Forecasted"))+
+  scale_x_date(date_breaks="1 year", date_labels = "%Y")+
   labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="",fill="")
+
+ggsave("Figures/forecasts.png", height = 9,width = 14,dpi=400)
 ```
 
 
@@ -226,6 +212,7 @@ write_csv(submit_df,forecast_file)
 
 ```
 
+
 # VII. Create metadata file
 ```{r metadata}
 
@@ -240,11 +227,22 @@ write_metadata_eml(forecast_file=forecast_file,
 ```
 
 
-# VII. Submit forecast
+# VIII. Submit forecast
 ```{r submitForecast}
 Sys.setenv("AWS_DEFAULT_REGION" = "data",
            "AWS_S3_ENDPOINT" = "ecoforecast.org")
 
 aws.s3::put_object(file=forecast_file, bucket="submissions")
+```
+
+
+Extra stuff
+
+### Need these set to submit?
+```{r submitVars}
+## Set the following  env vars: 
+# AWS_SECRET_ACCESS_KEY=""
+# AWS_DEFAULT_REGION="data"
+# AWS_S3_ENDPOINT="ecoforecast.org"
 ```
 
