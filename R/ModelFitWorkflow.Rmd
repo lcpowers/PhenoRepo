@@ -120,10 +120,6 @@ for(site in sites){
 
 }
 rm(all_wx,wx,x,site,targs)
-
-ggplot(GDD,aes(x=date,y=GDDdaily))+
-  geom_point(aes(color=source))+
-  facet_wrap(~siteID)
 ```
 
 
@@ -138,7 +134,7 @@ site = sites[6]
 # Start and end dates of warm period
 spring_date <- "-02-24"
 fall_date <- "-09-01"
-n_params <- 5 # Number of parameters being stored for the model
+n_params <- 5 # Number of parameters being stored for each site's model
 
 # Dataframe to store fitted parameters for each site
 params_df <- as.data.frame(matrix(data=NA,
@@ -192,13 +188,16 @@ for(site in sites){
   gridsearch_fit <- gridsearch(pvecs, ssq_phenmod, y=site_targs$gcc_90, GDD=site_GDD, spring_date=spring_date)
   
   # SSQ: Set of starting parameters for optim to use
-  # SSQ OPTIM FIT
   optim_starts <- c(gridsearch_fit$par["G_init"],
                     gridsearch_fit$par["a"],
                     gridsearch_fit$par["b"],
                     gridsearch_fit$par["green_up"],
                     gridsearch_fit$par["G_max"])
+  # SSQ Optim Fit
   optim_fit <- optim(optim_starts, ssq_phenmod, y=site_targs$gcc_90, GDD=site_GDD, spring_date=spring_date)
+
+  # Save fitted values to feed into cross-validation parameter searches
+  saveRDS(object = optim_fit, file = paste0("data/model/model_fits/optim_fit_", site, ".rds"))
   
   # Store results in dataframe
   params_df$siteID[which(sites==site)] <- site
@@ -220,25 +219,16 @@ for(site in sites){
   colnames(model_results)[2] <- "gcc_90"
   model_results$day <- yday(model_results$date)
   fitPlot <- ggplot() +
-        geom_point(data = site_targs, aes(x = as.Date(time), y = gcc_90), color = "springgreen4") +
-        geom_point(data=model_results, aes(x = date, y = gcc_90), color = "red") +
+        geom_point(data=site_targs, aes(x=as.Date(time), y=gcc_90), color="springgreen4") +
+        geom_point(data=model_results, aes(x=date, y=gcc_90), color="red") +
         labs(x="Day of year",y="GCC 90",title=paste0(site, " Model Fit")) +
-        theme_classic(base_size = 15)
+        theme_classic(base_size=15)
   
   print(fitPlot)
 }
 
 write_csv(params_df,"data/model/model_params.csv")
 ```
-
-Plot gridsearch surface
-```{r}
-
-
-
-
-```
-
 
 ### B. Uncertainty estimation with cross validation
 ```{r CrossValidation}
@@ -253,7 +243,7 @@ fall_date <- "-09-01"
 # Dataframe to store fitted parameters for each site
 cv_params_df <- NULL
 
-# Start a data.frame to store errors, that contains a column for date. The
+# Start a data.frame to store errors that contains a column for date. The
 # temporary error data.frames in each loop will be merged into this one using date as the join key
 error_df <- data.frame(date=seq(as.Date(paste0('2021',spring_date)),
                                as.Date(paste0('2021',fall_date)),by='day'))
@@ -302,17 +292,20 @@ for(site in sites){
       summarise(avg_maxGCC=mean(maxGCC)) %>% 
       as.numeric()
     
-    # list of parameter ranges                             
+    # Read in model fit from more robust gridsearch
+    site_fit <- readRDS(paste0("data/model/model_fits/optim_fit_", site, ".rds"))$par %>% as.list()
+    
+    # list of parameter ranges based on previous robust model fit                          
     pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
-              a=seq(0,0.01,length.out=10),   # green-up: fast growth
-              b=seq(0,0.2,length.out=10),  # maturation
-              green_up=seq(30,70,length.out=10),   # Spring transition
+              a=seq(site_fit$a*0.5,site_fit$a*1.5,length.out=10),   # green-up: fast growth
+              b=seq(site_fit$b*0.5,site_fit$b*1.5,length.out=10),  # maturation
+              green_up=seq(site_fit$green_up*0.5,site_fit$green_up*1.5,length.out=10),   # Spring transition
               G_max = avg_G_max)  # Summer transition = avg date of peak GCC
     
-    # First pass at parameter fitting using gridsearch and SSQ
-    gridsearch_fit <- gridsearch(pvecs, ssq_phenmod,y=training_targs$gcc_90,GDD=training_GDD,spring_date=spring_date)
+    # Re-fit parameters to test data using gridsearch and SSQ
+    gridsearch_fit <- gridsearch(pvecs,ssq_phenmod,y=training_targs$gcc_90,GDD=training_GDD,spring_date=spring_date)
     
-    # SSQ: Set of initial parameters for optim to use
+    # Gridsearch parameters to feed into optim
     optim_starts <- c(gridsearch_fit$par["G_init"],
                       gridsearch_fit$par["a"],
                       gridsearch_fit$par["b"],
@@ -320,7 +313,7 @@ for(site in sites){
                       gridsearch_fit$par["G_max"])
     optim_fit <- optim(optim_starts,ssq_phenmod,y=training_targs$gcc_90, GDD = training_GDD,spring_date=spring_date)
     
-    # Store parameters in data frame
+    # Store parameters in data frame and bind to larger data.frame
     tmp_params <- data.frame(siteID=site,
                              test_year = yeari,
                              G_init = optim_fit$par["G_init"],
@@ -338,7 +331,7 @@ for(site in sites){
                    G_max = optim_fit$par["G_max"],
                    spring_date=spring_date)
     
-    yeari_forecast <- WarmModelForecast(params=params,
+    yeari_forecast <- WarmModelForecast(params=params, 
                                         GDD = test_GDD,
                                         targets = test_targs,
                                         spring_date = spring_date,
@@ -354,14 +347,5 @@ for(site in sites){
 
   }
 
-```
-
-
-```{r}
-ggplot(yeari_forecast,aes(x=time))+
-  geom_point(aes(y=obs_gcc_90))+
-  geom_point(aes(y=pred_gcc_90))+
-  # geom_ribbon((aes(ymax=pred_gcc_90+abs(deviation),ymin=pred_gcc_90-abs(deviation))),alpha=0.5)+
-  theme_classic()
 ```
 
