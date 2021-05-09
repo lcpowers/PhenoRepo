@@ -223,7 +223,7 @@ for(site in sites){
   print(fitPlot)
 }
 
-write_csv(params_df,"data/model/model_params.csv")
+# write_csv(params_df,"data/model/model_params.csv")
 ```
 
 
