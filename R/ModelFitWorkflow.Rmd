@@ -3,10 +3,6 @@ title: "Workflow through Model Fitting"
 output: html_document
 ---
 
-## To do's:
-# Run robust gridsearch
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(root.dir="/home/claire/Git/PhenoRepo/")
@@ -14,7 +10,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ### Packages
-```{r packages, message=FALSE}
+```{r Packages, message=FALSE}
 rm(list=ls())
 
 library(here)
@@ -33,8 +29,8 @@ source("R/gridsearch_Casey.R")
 source("R/ssq_phenomod.R")
 ```
 
-## Update and read-in target data, then remove leading NAs and fill in others
-```{r targetDate}
+## I. Update and read-in target data, then remove leading NAs and fill in others
+```{r TargetDate}
 # Update target data if not yet updated today 
 target_fp <- "data/pheno/phenology-targets.csv.gz"
 
@@ -79,8 +75,8 @@ rm(target_fp,site,targets_raw)
 ```
 
 
-## Update or read in temperature data
-```{r NEONtempdata}
+## II. Update or read in temperature data
+```{r TempData}
 
 ## Update NEON temperature data and read in. This will take A WHILE (2 hrs?), so only run this line if you really want to update weather data, otherwise keep it commented out and run the line the reads in the most recent temperature data
 
@@ -123,9 +119,8 @@ rm(all_wx,wx,x,site,targs)
 ```
 
 
-## I. Model fitting   
-### a. Parameter fitting
-```{r gridsearch}
+## III. Model fitting
+```{r ParamFit}
 
 sites <- unique(targets$siteID) %>% as.character()
 #sites = "GRSM"
@@ -230,7 +225,7 @@ for(site in sites){
 write_csv(params_df,"data/model/model_params.csv")
 ```
 
-### B. Uncertainty estimation with cross validation
+### IV. Uncertainty estimation with cross validation
 ```{r CrossValidation}
 
 sites <- unique(targets$siteID) %>% as.character()
