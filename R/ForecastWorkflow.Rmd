@@ -191,7 +191,7 @@ forecast_df$source<-"forecast"
 all_gcc <- rbind(targets,forecast_df[,c(1:4,6)]) %>% 
   mutate(year = year(time)) # Add year column to subset plot
   
-ggplot(subset(all_gcc,time>="2020-01-01"), aes(x=time,y=gcc_90))+
+ggplot(subset(all_gcc,time>="2019-01-01"), aes(x=time,y=gcc_90))+
   geom_point(aes(color=source),alpha=0.75)+
   geom_ribbon(data = subset(all_gcc,time>="2021-05-01"),
               mapping = aes(x=time,ymin=gcc_90-gcc_sd,ymax=gcc_90+gcc_sd,color=source,fill=source),alpha=0.75)+
@@ -206,7 +206,19 @@ ggplot(subset(all_gcc,time>="2020-01-01"), aes(x=time,y=gcc_90))+
 # VI. Get into correct format for succesful submission
 ```{r formatForSubmit}
 
+submit_df <- all_gcc %>% 
+  filter(time>=(Sys.Date()-1)) %>% 
+  select(time,siteID,gcc_90,gcc_sd) %>% 
+  melt(id.vars=c("time","siteID"),
+       variable.name="statistic",
+       value.name = "gcc_90")%>% 
+  mutate(forecast=1,
+         obs_flag=2,
+         data_assimilation=0)
+submit_df$statistic <- ifelse(submit_df$statistic=="gcc_90","mean","sd")
+submit_df$statistic <- as.character(submit_df$statistic)
 
+write_csv(submit_df,paste0("data/forecasts/",Sys.Date(),"_forecast.csv"))
 
 ```
 
