@@ -181,7 +181,7 @@ for(site in sites){
   # gridsearch_fit <- gridsearch(pvecs, ssq_phenmod, y=site_targs$gcc_90, GDD=site_GDD, spring_date=spring_date)
   
   # This will bring in the most recent robust gridsearch fit for each site
-  gridsearch_fit <- readRDS(paste0("data/model/model_fits/optim_fit_", site, ".rds"))$par
+  gridsearch_fit <- readRDS(paste0("data/model/model_fits/optim_fit_", site, ".rds"))
   
   # SSQ: Set of starting parameters for optim to use
   optim_starts <- c(gridsearch_fit$par["G_init"],
