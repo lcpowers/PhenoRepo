@@ -24,6 +24,7 @@ library(neon4cast)
 library(neonUtilities)
 library(zoo)
 library(imputeTS)
+library(reshape2)
 
 source("R/NEONscripts/publish.R")
 source("R/WarmModelForecast.R")
@@ -143,13 +144,41 @@ for(site in sites){
 
 # IV. Add uncertainty estimate
 ```{r addUncertainty}
-error_df <- read_csv()
 
+# Read in error csv produced at the end of model workflow
+error_df <- read_csv("data/model/model_errors.csv") %>% 
+  mutate(forecast_day = seq(1:nrow(.)))
 
+# Restructure error df from wide to long 
+error_melt <- melt(error_df,id.vars = c("dayofyear","forecast_day"), value.name = "deviation") %>% 
+  mutate(siteID = as.factor(str_sub(variable,1,4)),
+         year=str_sub(variable,5,8)) %>% 
+  select(dayofyear,forecast_day,siteID,year,deviation) %>% 
+  filter(complete.cases(.)) # Remove any rows with NAs / Keep complete rows
+
+ggplot(error_melt,aes(x=forecast_day,y=deviation))+
+  geom_point(alpha=0.5)+
+  geom_smooth()
+  
+MSQerror_df <- error_melt %>% 
+  group_by(forecast_day,siteID) %>% # For each forecast day....
+  summarise(MSQerror = mean(deviation^2)) #...find the mean square error of the deviations (y.obs-y.pred)
+
+ggplot(subset(MSQerror_df,forecast_day<=35), aes(x=forecast_day,y=MSQerror))+
+  geom_point(alpha=0.5)+
+  geom_smooth()
+
+# Create simple linear regression model of errors using forecast_day as predictor variable
+error_lm <- lm(MSQerror~forecast_day+siteID,data=subset(MSQerror_df,forecast_day<=50))
+summary(error_lm)
+
+# Add error to forecast df
+forecast_df$gcc_sd <- predict(error_lm,newdata = forecast_df)*50
+plot(forecast_df$forecast_day,forecast_df$gcc_sd)
 ```
 
 
-# V. Plot forecasted GCC with targets
+# V. Plot forecasted GCC with targets and uncertainty
 ```{r plotForecast}
 # Read full targets DF in to rbind to forecasted gcc values and plot
 targets <- read.csv(target_fp,header=TRUE) %>% 
@@ -158,14 +187,19 @@ targets <- read.csv(target_fp,header=TRUE) %>%
          siteID = as.factor(siteID))
 forecast_df$source<-"forecast"
 
-all_gcc <- rbind(targets,forecast_df[,c(1:4,6)]) # Bind with targets, but skip forecast_day column
-
-ggplot(all_gcc,aes(x=time,y=gcc_90))+
-  geom_point(aes(color=source))+
+# Bind with targets, but skip forecast_day column
+all_gcc <- rbind(targets,forecast_df[,c(1:4,6)]) %>% 
+  mutate(year = year(time)) # Add year column to subset plot
+  
+ggplot(subset(all_gcc,time>="2020-01-01"), aes(x=time,y=gcc_90))+
+  geom_point(aes(color=source),alpha=0.75)+
+  geom_ribbon(data = subset(all_gcc,time>="2021-05-01"),
+              mapping = aes(x=time,ymin=gcc_90-gcc_sd,ymax=gcc_90+gcc_sd,color=source,fill=source),alpha=0.75)+
   facet_wrap(~siteID)+
   theme_classic(base_size = 16)+
-  scale_color_manual(values=c("grey","springgreen4"),labels=c("Observed","Forecasted"))+
-  labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="")
+  scale_color_manual(values=c("grey60","springgreen4"),labels=c("Observed","Forecasted"))+
+  scale_fill_manual(values=c("grey60","springgreen4"),labels=c("Observed","Forecasted"))+
+  labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="",fill="")
 ```
 
 
