@@ -76,8 +76,9 @@ neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>%
 # source("R/GetNOAAForecastData.R")
 # noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
-## Or read in most recent pull of data
-noaa_wx <- read_csv("./data/drivers/noaa/noaa_temp_4cast_2021-05-05.csv")
+## Or read in most recent pull of data. Last pull of new data was 2021-05-09. 
+# IF THIS LINE (below) GIVES AN ERROR, PROBABLY NEED TO RUN line 77 FOR NEW DATA
+noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
 # Either way, run this
 noaa_wx <- noaa_wx %>%
@@ -111,7 +112,6 @@ GDD <- filter(GDD,date>=Sys.Date())
 
 ## III. Forecast using NOAA temperature data -- make sure it's updated. 
 ```{r forecastGCC}
-sites <- unique(targets$siteID) %>% as.character()
 forecast_df <- NULL
 spring_date = str_sub(Sys.Date(),5,10)
 
@@ -130,32 +130,52 @@ for(site in sites){
   
   tmp_forecast <- WarmModelForecast(params = site_params, GDD=site_GDD, targets=site_targs, spring_date = spring_date,cross_validation = FALSE)
   tmp_forecast$siteID <- site
-  tmp_forecast <- select(tmp_forecast,c(time=date,siteID,'gcc_90'=pred_gcc_90)) %>% mutate(gcc_sd=NA)
+  tmp_forecast <- select(tmp_forecast,c(time=date,siteID,'gcc_90'=pred_gcc_90)) %>% 
+    mutate(gcc_sd=NA,
+           forecast_day=seq(1:nrow(.))) 
   forecast_df <- rbind(forecast_df,tmp_forecast)
   rm(tmp_forecast,site_params,site_targs,site_GDD)
   
 }
 
+```
+
+
+# IV. Add uncertainty estimate
+```{r addUncertainty}
+error_df <- read_csv()
+
+
+```
+
+
+# V. Plot forecasted GCC with targets
+```{r plotForecast}
 # Read full targets DF in to rbind to forecasted gcc values and plot
 targets <- read.csv(target_fp,header=TRUE) %>% 
   mutate(time = as.Date(time),
          source=as.factor("targets"),
          siteID = as.factor(siteID))
-all_gcc <- rbind(targets,forecast_df)
+forecast_df$source<-"forecast"
+
+all_gcc <- rbind(targets,forecast_df[,c(1:4,6)]) # Bind with targets, but skip forecast_day column
 
 ggplot(all_gcc,aes(x=time,y=gcc_90))+
   geom_point(aes(color=source))+
-  facet_wrap(~siteID)
+  facet_wrap(~siteID)+
+  theme_classic(base_size = 16)+
+  scale_color_manual(values=c("grey","springgreen4"),labels=c("Observed","Forecasted"))+
+  labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="")
 ```
 
 
-# IV. Get into correct format for succesful submission
+# VI. Get into correct format for succesful submission
 ```{r formatForSubmit}
 
 ```
 
 
-# V. Submit forecast
+# VII. Submit forecast
 ```{r submitForecast}
 
 publish(code = c("phenology-workflow.R", "nullModel_randomWalk_main.R", "randomWalkNullModelFunction.R"),

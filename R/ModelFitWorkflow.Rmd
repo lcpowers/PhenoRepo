@@ -232,8 +232,6 @@ write_csv(params_df,"data/model/model_params.csv")
 ### IV. Uncertainty estimation with cross validation
 ```{r CrossValidation}
 
-sites <- unique(targets$siteID) %>% as.character()
-
 # Start and end dates of warm period
 spring_date <- "-02-24"
 fall_date <- "-09-01"
@@ -346,5 +344,6 @@ for(site in sites){
 
   }
 
+write_csv(error_df,"data/model/model_errors.csv")
 ```
 
