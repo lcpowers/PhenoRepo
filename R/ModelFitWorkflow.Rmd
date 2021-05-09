@@ -85,9 +85,9 @@ rm(target_fp,site,targets_raw)
 ## Update NEON temperature data and read in. This will take A WHILE (2 hrs?), so only run this line if you really want to update weather data, otherwise keep it commented out and run the line the reads in the most recent temperature data
 
 # source("R/GetNEONwxdata.R")
-neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>% 
-  select(siteID,date,daily_mean,daily_min,daily_max) %>% 
-  mutate(source='neon') %>% 
+neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>%
+  select(siteID,date,daily_mean,daily_min,daily_max) %>%
+  mutate(source='neon') %>%
   filter(date >= min(targets$time))
 
 ## Update NOAA weather data. This will take a minute or two, but shouldn't take longer
@@ -96,8 +96,8 @@ neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>%
 
 ## Or read in most recent pull of data
 noaa_wx <- read_csv("./data/drivers/noaa/noaa_temp_4cast_2021-05-05.csv")
-noaa_wx <- noaa_wx %>% 
-  select(siteID,date,daily_mean,daily_min,daily_max) %>% 
+noaa_wx <- noaa_wx %>%
+  select(siteID,date,daily_mean,daily_min,daily_max) %>%
   mutate(source='noaa')
 
 all_wx <- rbind(neon_wx,noaa_wx)
@@ -111,15 +111,19 @@ GDD$day <- yday(GDD$date)
 
 # For each site, check that target dates have matching weather dates
 for(site in sites){
-  
+
   targs <- filter(targets,siteID==site & time <= Sys.Date())
   wx <- filter(GDD,siteID==site & date <= Sys.Date())
   x = as.Date(setdiff(as.Date(targs$time),as.Date(wx$date)))
-  
+
   if(length(x)>0) print(paste0("Targets for ",site," missing wx for",x))
-  
+
 }
 rm(all_wx,wx,x,site,targs)
+
+ggplot(GDD,aes(x=date,y=GDDdaily))+
+  geom_point(aes(color=source))+
+  facet_wrap(~siteID)
 ```
 
 
