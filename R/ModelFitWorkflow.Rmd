@@ -123,8 +123,6 @@ rm(all_wx,wx,x,site,targs)
 ## III. Model fitting
 ```{r ParamFit}
 
-sites <- unique(targets$siteID) %>% as.character()
-
 # Start and end dates of warm period
 spring_date <- "-02-24"
 fall_date <- "-09-01"

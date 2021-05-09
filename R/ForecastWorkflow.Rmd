@@ -113,7 +113,7 @@ GDD <- filter(GDD,date>=Sys.Date())
 ## III. Forecast using NOAA temperature data -- make sure it's updated. 
 ```{r forecastGCC}
 forecast_df <- NULL
-spring_date = str_sub(Sys.Date(),5,10)
+spring_date = str_sub(string = Sys.Date(),start = 5,end = 10)
 
 for(site in sites){
   
@@ -171,6 +171,8 @@ ggplot(all_gcc,aes(x=time,y=gcc_90))+
 
 # VI. Get into correct format for succesful submission
 ```{r formatForSubmit}
+
+
 
 ```
 
