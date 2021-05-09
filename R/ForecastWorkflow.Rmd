@@ -28,6 +28,7 @@ source("R/WarmModelForecast.R")
 source("R/calcGDDfun.R")
 ```
 
+
 ### Need these set to submit
 ```{r submitVars}
 ## Set the following  env vars: 
@@ -37,7 +38,7 @@ source("R/calcGDDfun.R")
 ```
 
 
-# Read in target data and filter for the most recent week to inform G_init
+## I. Read in target data
 ```{r targetData}
 # Update target data if not yet updated today 
 target_fp <- "data/pheno/phenology-targets.csv.gz"
@@ -58,7 +59,7 @@ sites <- unique(targets$siteID)
 ```
 
 
-# Read in temperature data
+## II. Read in temperature data and get GDD values -- Need NEON data for current year and 35-day forecasted NOAA data.
 ```{r wxData}
 ## Update NEON temperature data and read in. This will take A WHILE (2 hrs?), so only run this line if you really want to update weather data, otherwise keep it commented out and run the line the reads in the most recent temperature data
 
@@ -106,7 +107,7 @@ GDD <- filter(GDD,date>=Sys.Date())
 ```
 
 
-# Forecast using NOAA temperature data -- make sure it's updated. Bring in temp code chunk from ModelFitWorkflow
+## III. Forecast using NOAA temperature data -- make sure it's updated. 
 ```{r forecastGCC}
 sites <- unique(targets$siteID)
 forecast_df <- NULL
@@ -146,17 +147,13 @@ ggplot(all_gcc,aes(x=time,y=gcc_90))+
 ```
 
 
-# Format to prepare for scoring
-# Submit forecasted data
-
-# Forecast GCC
-
-# Get into correct format for succesful submission
+# IV. Get into correct format for succesful submission
 ```{r formatForSubmit}
 
 ```
 
-# Submit forecast
+
+# V. Submit forecast
 ```{r submitForecast}
 
 publish(code = c("phenology-workflow.R", "nullModel_randomWalk_main.R", "randomWalkNullModelFunction.R"),
