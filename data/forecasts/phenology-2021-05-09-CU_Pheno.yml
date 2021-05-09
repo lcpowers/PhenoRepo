@@ -1,0 +1,139 @@
+#####
+#See https://shorturl.at/irMQW for a guide to all the options below
+####
+team_name: pers_null_daily
+# ids are optional except for the first author, who is also the 'contact'
+team_list:
+  - individualName:
+      givenName: Casey 
+      surName: Middleton
+      id: casey.middleton@colorado.edu
+  - individualName:
+      givenName: Claire 
+      surName: Powers
+      id: claire.powers@colorado.edu
+  - individualName:
+      givenName: Josh
+      surName: Seabaugh
+      id: joshua.seabaugh@colorado.edu
+metadata:
+  forecast:
+    timestep: 1 day #time step of model
+    forecast_horizon: 35 days #number of time steps in the future
+#
+    model_description:
+      # model identifier:
+      forecast_model_id: "null"
+      name: Mechanistic model of GCC growth-decay
+      type: empirical 
+      repository: https://github.com/lcpowers/PhenoRepo
+#
+#INITIAL CONDITIONS      
+#Uncertainty in the initialization of state variables (Y). Initial condition 
+#uncertainty will be a common feature of any dynamic model, where the future 
+#state depends on the current state, such as population models, process-based 
+#biogeochemical pool & flux models, and classic time-series analysis. 
+#
+#complexity = number of state variables in the model. Examples of this would be the number of
+#species in a community model, number of age/size classes in a population model, 
+#number of pools in a biogeochemical model.
+    initial_conditions: Not sure yet, but will figure this out!
+      # status: assimilates #options: absent, present, data_driven, propagates, assimilates
+      # complexity: 2 #How many models states need initial conditions
+      # propagation:
+      #   type: ensemble #How does your model propogate initial conditions (ensemble or MCMC is most common)
+      #   size: 2000. #number of ensemble or MCMC members
+      # assimilation:
+      #   type: refit #description of assimilation method
+      #   reference: "NA" #reference for assimilation method
+      #   complexity: 4 #number of states that are updated with assimilation
+#        
+#DRIVERS
+#uncertainty in model drivers, covariates, and exogenous scenarios (X). 
+#Driver/covariate uncertainties may come directly from a data product, as a 
+#reported error estimate or through driver ensembles, or may be estimated based 
+#on sampling theory, cal/val documents, or some other source.
+#
+#complexity = Number of different driver variables or covariates in a model. For example, in 
+#a multiple regression this would be the number of X’s. For a climate-driven 
+#model, this would be the number of climate inputs (temperature, precip, solar 
+#radiation, etc.).
+    drivers: Not sure yet, but will figure this out!
+      # status: absent #options: absent, present, data_driven, propagates, assimilates
+      #       complexity: 2 #How many models states need initial conditions
+      # propagation:
+      #   type: ensemble #How does your model propogate initial conditions 
+      #   size: 2000. #number of ensemble or MCMC members
+      # assimilation:
+      #   type: refit #description of assimilation method
+      #   reference: "NA" #reference for assimilation method
+      #   complexity: 4 #number of states that are updated with assimilation
+#        
+#PARAMETERS
+#Uncertainty in model parameters (). For most ecological processes the parameters
+#(a.k.a. coefficients) in model equations are not physical constants but need to 
+#be estimated from data. 
+#
+#complexity = number of estimated parameters/coefficients in a model at a single point in 
+#space/time. For example, in a regression it would be the number of beta’s.
+    parameters: Not sure yet, but will figure this out!
+#       status: present #options: absent, present, data_driven, propagates, assimilates
+#       complexity: 2
+#       propagation:
+#         type: ensemble
+#         size: 2000
+#       assimilation:
+#         type: refit
+#         reference: "NA"
+#         complexity: 4
+# #
+
+#
+#PROCESS ERROR
+#Dynamic uncertainty in the process model () attributable to both model 
+#misspecification and stochasticity. Pragmatically, this is the portion of the 
+#residual error from one timestep to the next that is not attributable to any of
+#the other uncertainties listed above, and which typically propagates into the future. 
+#
+#complexity =  dimension of the error covariance matrix. So if we had a n x n 
+#covariance matrix, n is the value entered for <complexity>. Typically n should 
+#match the dimensionality of the initial_conditions unless there are state 
+#variables where process error is not being estimated or propagated
+    process_error: Not sure yet, but will figure this out!
+      # status: assimilates #options: absent, present, data_driven, propagates, assimilates
+      # complexity: 2
+      # propagation:
+      #   type: ensemble
+      #   size: 2000
+      # assimilation:
+      #   type: refit
+      #   reference: "NA"
+      #   complexity: 4
+      #   covariance: NA #TRUE OR FALSE
+      #   localization:
+#
+#OBSERVATION ERROR
+#Uncertainty in the observations of the output variables (g). Note that many 
+#statistical modeling approaches do not formally partition errors in observations
+#from errors in the modeling process, but simply lump these into a residual error. 
+#Because of this we make the pragmatic distinction and ask that residual errors 
+#that a forecast model do not directly propagate into the future be recorded as 
+#observation errors. Observation errors now may indeed affect the initial condition 
+#uncertainty in the next forecast, but we consider this to be indirect. 
+#
+#complexity = dimension of the error covariance matrix. So if we had a n x n 
+#covariance matrix, n is the value entered for <complexity>. Typically n should 
+#match the dimensionality of the initial_conditions unless there are state 
+#variables where process error is not being estimated or propagated
+    obs_error: Not sure yet, but will figure this out!
+      # status: absent #options: absent, present, data_driven, propagates, assimilates
+      # complexity: 2 #How many models states need initial conditions
+      # propagation:
+      #   type: ensemble #How does your model propogate initial conditions (ensemble or MCMC is most common)
+      #   size: 2000. #number of ensemble or MCMC members
+      # assimilation:
+      #   type: refit #description of assimilation method
+      #   reference: "NA" #reference for assimilation method
+      #   complexity: 4 #number of states that are updated with assimilation
+      #   covariance: NA #TRUE OR FALSE
+      #   localization:
