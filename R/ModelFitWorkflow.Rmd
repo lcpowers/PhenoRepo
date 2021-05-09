@@ -29,6 +29,7 @@ source("R/gridsearch_Casey.R")
 source("R/ssq_phenomod.R")
 ```
 
+
 ## I. Update and read-in target data, then remove leading NAs and fill in others
 ```{r TargetDate}
 # Update target data if not yet updated today 
@@ -123,8 +124,6 @@ rm(all_wx,wx,x,site,targs)
 ```{r ParamFit}
 
 sites <- unique(targets$siteID) %>% as.character()
-#sites = "GRSM"
-site = sites[6]
 
 # Start and end dates of warm period
 spring_date <- "-02-24"
@@ -174,9 +173,9 @@ for(site in sites){
   
   # list of parameter ranges                             
   pvecs <- list(G_init = avg_G_init,  # GCC guess = avg first 7 days of targets
-              a=seq(0,0.01,length.out=10),   # green-up: fast growth
-              b=seq(0,0.2,length.out=10),  # maturation
-              green_up=seq(10,70,length.out=10),   # Spring transition
+              a=seq(0,0.01,length.out=30),   # green-up: fast growth
+              b=seq(0,0.2,length.out=30),  # maturation
+              green_up=seq(10,70,length.out=30),   # Spring transition
               G_max = avg_G_max)  # Summer transition = max GCC avg each year
   
   # First pass at parameter fitting using gridsearch and SSQ
@@ -224,6 +223,7 @@ for(site in sites){
 
 write_csv(params_df,"data/model/model_params.csv")
 ```
+
 
 ### IV. Uncertainty estimation with cross validation
 ```{r CrossValidation}
