@@ -29,6 +29,10 @@ library(reshape2)
 source("R/NEONscripts/publish.R")
 source("R/WarmModelForecast.R")
 source("R/calcGDDfun.R")
+
+team_ID = "CU_Pheno" 
+theme="phenology"
+forecast_file=paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",theme,"-",Sys.Date(),"-",team_ID,".csv")
 ```
 
 
@@ -218,18 +222,29 @@ submit_df <- all_gcc %>%
 submit_df$statistic <- ifelse(submit_df$statistic=="gcc_90","mean","sd")
 submit_df$statistic <- as.character(submit_df$statistic)
 
-write_csv(submit_df,paste0("data/forecasts/",Sys.Date(),"_forecast.csv"))
+write_csv(submit_df,forecast_file)
+
+```
+
+# VII. Create metadata file
+```{r metadata}
+
+metadata_yaml <- paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",theme,"-",Sys.Date(),"-",team_ID,".yml")
+
+create_model_metadata(forecast_fn)
+write_metadata_eml(forecast_file=forecast_file,
+                   metadata_yaml=metadata_yaml,
+                   forecast_issue_time = Sys.Date(),
+                   forecast_iteration_id = "1")
 
 ```
 
 
 # VII. Submit forecast
 ```{r submitForecast}
+Sys.setenv("AWS_DEFAULT_REGION" = "data",
+           "AWS_S3_ENDPOINT" = "ecoforecast.org")
 
-publish(code = c("phenology-workflow.R", "nullModel_randomWalk_main.R", "randomWalkNullModelFunction.R"),
-        data_out = c(forecast_file_name),
-        prefix = "phenology/",
-        bucket = "forecasts")
-
+aws.s3::put_object(file=forecast_file, bucket="submissions")
 ```
 
