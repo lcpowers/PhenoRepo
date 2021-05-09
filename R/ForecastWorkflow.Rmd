@@ -5,6 +5,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(root.dir="/home/claire/Git/PhenoRepo/")
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ### Packages
@@ -109,13 +111,13 @@ GDD <- filter(GDD,date>=Sys.Date())
 
 ## III. Forecast using NOAA temperature data -- make sure it's updated. 
 ```{r forecastGCC}
-sites <- unique(targets$siteID)
+sites <- unique(targets$siteID) %>% as.character()
 forecast_df <- NULL
 spring_date = str_sub(Sys.Date(),5,10)
 
 for(site in sites){
   
-  site_targs <- targets %>% filter(siteID==site) %>% filter(time>=(Sys.Date()-1))
+  site_targs <- targets %>% filter(siteID==site) %>% filter(time>=(Sys.Date()-7))
   site_GDD <- GDD %>% filter(siteID==site&date>=Sys.Date())
   
   site_params <- model_params %>% filter(siteID==site)
