@@ -8,14 +8,14 @@
 #' 
 
 
-WarmModelForecast <- function(params,test_GDD,test_targs,spring_date) {
+WarmModelForecast <- function(params,GDD,targets,spring_date,cross_validation=FALSE) {
   
   # GDD Input Data
-  gdd = test_GDD$GDDdaily
-  total_days = test_GDD$GDDdays
-  date = test_GDD$date
-  days_passed <- test_GDD$day
-  gdd_days_passed <- test_GDD$GDDdays
+  gdd = GDD$GDDdaily
+  total_days = GDD$GDDdays
+  date = GDD$date
+  days_passed <- GDD$day
+  gdd_days_passed <- GDD$GDDdays
   days_inverse <- 1/gdd_days_passed
   n <- length(gdd)
   
@@ -25,7 +25,7 @@ WarmModelForecast <- function(params,test_GDD,test_targs,spring_date) {
   delta <- params$b * days_inverse * (total_days > params$green_up)  # Leaf Maturation
   
   # Create Data Frame
-  output_df <- data.frame(date = test_GDD$date,
+  output_df <- data.frame(date = GDD$date,
                           pred_gcc_90 = rep(NA,n),
                           N = rep(NA,n))
   
@@ -34,7 +34,7 @@ WarmModelForecast <- function(params,test_GDD,test_targs,spring_date) {
   for ( i in 1:n ) {
     
     # Reset to initial conditions on 2/14 every year
-    ifelse (str_detect(test_GDD$date[i],params$spring_date),
+    ifelse (str_detect(GDD$date[i],params$spring_date),
             # If start of year, initialize values
             {
               # Boolean for second epoch switch
@@ -64,11 +64,15 @@ WarmModelForecast <- function(params,test_GDD,test_targs,spring_date) {
             })
   }
   
+  if(cross_validation){
   forecast_df <- merge(test_targs,output_df,by.x = 'time',by.y='date') %>% 
     select(time,year,day,siteID,obs_gcc_90=gcc_90,pred_gcc_90) %>% 
     mutate(error=obs_gcc_90-pred_gcc_90)
+    return(forecast_df)
+  }else{
+    return(output_df)
+  }
   
-  return(forecast_df)
   
 }
 

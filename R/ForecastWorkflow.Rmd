@@ -47,7 +47,7 @@ if(as.Date(file.info(target_fp)$ctime)!=Sys.Date()) {
     }
 
 targets <- read.csv(target_fp,header=TRUE) %>% 
-  filter(time >= (Sys.Date()-7))
+  filter(time >= "2021-01-01")
 targets$siteID <- as.factor(targets$siteID)
 targets$time <- as.Date(targets$time)
 
@@ -57,35 +57,47 @@ model_params <- read_csv("data/model/model_params.csv")
 
 # Read in NOAA temperature data
 ```{r wxData}
-# Download most recent noaa forcast data
-source("R/GetNOAAForecastData.R")
+## Update NEON temperature data and read in. This will take A WHILE (2 hrs?), so only run this line if you really want to update weather data, otherwise keep it commented out and run the line the reads in the most recent temperature data
+
+# source("R/GetNEONwxdata.R")
+neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>%
+  select(siteID,date,daily_mean,daily_min,daily_max) %>%
+  mutate(source='neon') %>%
+  filter(date >= "2021-01-01")
+
+## Update NOAA weather data. This will take a minute or two, but shouldn't take longer
+## When it finishes, should be a dataframe called noaa_wx in the global env
+# source("R/GetNOAAForecastData.R")
 noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
 ## Or read in most recent pull of data
-noaa_wx <- noaa_wx %>% 
-  select(siteID,date,daily_mean,daily_min,daily_max) %>% 
+# noaa_wx <- read_csv("./data/drivers/noaa/noaa_temp_4cast_2021-05-05.csv")
+noaa_wx <- noaa_wx %>%
+  select(siteID,date,daily_mean,daily_min,daily_max) %>%
   mutate(source='noaa')
 
+all_wx <- rbind(neon_wx,noaa_wx)
+rm(neon_wx,noaa_wx)
+
 # Apply GDD function which will fill in missing temp data and calculate GDD values
-GDD  <- calcGDDfun(temp_df=noaa_wx,targets_df = targets,int_method = "spline")
+GDD <- calcGDDfun(temp_df=all_wx,targets_df = targets,int_method = "spline")
 
 # Add in day of year
 GDD$day <- yday(GDD$date)
 
-sites <- unique(noaa_wx$siteID)
-
 # For each site, check that target dates have matching weather dates
 for(site in sites){
-  
+
   targs <- filter(targets,siteID==site & time <= Sys.Date())
   wx <- filter(GDD,siteID==site & date <= Sys.Date())
   x = as.Date(setdiff(as.Date(targs$time),as.Date(wx$date)))
-  
-  if(length(x)>0) print(paste0("Targets for ",site," missing wx for",x))
-  
-}
 
-rm(wx,x,site,targs)
+  if(length(x)>0) print(paste0("Targets for ",site," missing wx for",x))
+
+}
+rm(all_wx,wx,x,site,targs)
+
+GDD <- filter(GDD,date>=Sys.Date())
 ```
 
 
@@ -95,14 +107,13 @@ sites <- unique(targets$siteID)
 forecast_df <- NULL
 spring_date = "-05-08"
 
-
 for(site in sites){
   
-  site_targs <- targets %>% filter(siteID==site)
+  site_targs <- targets %>% filter(siteID==site) %>% filter(time>=(Sys.Date()-7))
   site_GDD <- GDD %>% filter(siteID==site&date>=Sys.Date())
   
   site_params <- model_params %>% filter(siteID==site)
-  site_params <- list(G_init = mean(targets$gcc_90,na.rm = T),
+  site_params <- list(G_init = mean(site_targs$gcc_90,na.rm = T),
                      a = site_params$a[1],
                      b = site_params$b[1],
                      green_up = site_params$green_up[1],
@@ -111,13 +122,17 @@ for(site in sites){
   
   tmp_forecast <- WarmModelForecast(params = site_params, GDD=site_GDD, targets=site_targs, spring_date = spring_date,cross_validation = FALSE)
   tmp_forecast$siteID <- site
-  tmp_forecast <- select(tmp_forecast,c(siteID,date,'gcc_90'=pred_gcc_90))
+  tmp_forecast <- select(tmp_forecast,c(time=date,siteID,'gcc_90'=pred_gcc_90)) %>% mutate(gcc_sd=NA)
   forecast_df <- rbind(forecast_df,tmp_forecast)
   rm(tmp_forecast,site_params,site_targs,site_GDD)
   
 }
 
-ggplot(noaa_wx,aes(x=date,y=daily_mean))+
+targets <- read.csv(target_fp,header=TRUE) 
+
+all_gcc <- rbind(targets,forecast_df)
+
+ggplot(all_gcc,aes(x=time,y=gcc_90))+
   geom_point()+
   facet_wrap(~siteID)
 ```
