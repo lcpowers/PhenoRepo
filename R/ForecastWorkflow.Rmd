@@ -70,11 +70,13 @@ neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>%
 
 ## Update NOAA weather data. This will take a minute or two, but shouldn't take longer
 ## When it finishes, should be a dataframe called noaa_wx in the global env
-source("R/GetNOAAForecastData.R")
-noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
+# source("R/GetNOAAForecastData.R")
+# noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
 ## Or read in most recent pull of data
-# noaa_wx <- read_csv("./data/drivers/noaa/noaa_temp_4cast_2021-05-05.csv")
+noaa_wx <- read_csv("./data/drivers/noaa/noaa_temp_4cast_2021-05-05.csv")
+
+# Either way, run this
 noaa_wx <- noaa_wx %>%
   select(siteID,date,daily_mean,daily_min,daily_max) %>%
   mutate(source='noaa')
