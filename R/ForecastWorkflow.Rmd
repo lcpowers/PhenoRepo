@@ -9,6 +9,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Packages
 ```{r packages}
+rm(list=ls())
+
 # remotes::install_github("cboettig/prov")
 library(contentid)
 library(prov)
@@ -21,35 +23,56 @@ library(neonUtilities)
 
 source("R/NEONscripts/publish.R")
 source("R/WarmModelForecast.R")
+source("R/calcGDDfun.R")
 ```
 
 ### Need these set to submit
 ```{r submitVars}
 ## Set the following  env vars: 
-# AWS_ACCESS_KEY_ID=""
 # AWS_SECRET_ACCESS_KEY=""
 # AWS_DEFAULT_REGION="data"
 # AWS_S3_ENDPOINT="ecoforecast.org"
 ```
 
+
+# Read in target data and filter for the most recent week to inform G_init
+```{r targetData}
+# Update target data if not yet updated today 
+target_fp <- "data/pheno/phenology-targets.csv.gz"
+
+if(as.Date(file.info(target_fp)$ctime)!=Sys.Date()) {
+  print("Downloading updated target data")
+    download.file("https://data.ecoforecast.org/targets/phenology/phenology-targets.csv.gz",
+              target_fp)
+    }
+
+targets <- read.csv(target_fp,header=TRUE) %>% 
+  filter(time >= (Sys.Date()-7))
+targets$siteID <- as.factor(targets$siteID)
+targets$time <- as.Date(targets$time)
+
+model_params <- read_csv("data/model/model_params.csv")
+```
+
+
 # Read in NOAA temperature data
 ```{r wxData}
-# Download most recent noadaforcast data
+# Download most recent noaa forcast data
 source("R/GetNOAAForecastData.R")
+noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
 ## Or read in most recent pull of data
 noaa_wx <- noaa_wx %>% 
   select(siteID,date,daily_mean,daily_min,daily_max) %>% 
   mutate(source='noaa')
 
-all_wx <- rbind(neon_wx,noaa_wx)
-rm(neon_wx,noaa_wx)
-
 # Apply GDD function which will fill in missing temp data and calculate GDD values
-GDD <- calcGDDfun(temp_df=all_wx,targets_df = targets,int_method = "spline")
+GDD  <- calcGDDfun(temp_df=noaa_wx,targets_df = targets,int_method = "spline")
 
 # Add in day of year
 GDD$day <- yday(GDD$date)
+
+sites <- unique(noaa_wx$siteID)
 
 # For each site, check that target dates have matching weather dates
 for(site in sites){
@@ -61,38 +84,42 @@ for(site in sites){
   if(length(x)>0) print(paste0("Targets for ",site," missing wx for",x))
   
 }
-rm(all_wx,wx,x,site,targs)
 
-```
-
-
-# Read in target data and filter for the most recent week to inform G_init
-```{r targetData}
-
-
-```
-
-
-# Read in model parameters for each site
-```{r modelParams}
-
-## STILL NEED TO WRITE THIS OUTPUT FROM 
-
+rm(wx,x,site,targs)
 ```
 
 
 # Forecast using NOAA temperature data -- make sure it's updated. Bring in temp code chunk from ModelFitWorkflow
 ```{r forecastGCC}
-
+sites <- unique(targets$siteID)
 forecast_df <- NULL
+spring_date = "-05-08"
+
 
 for(site in sites){
   
+  site_targs <- targets %>% filter(siteID==site)
+  site_GDD <- GDD %>% filter(siteID==site&date>=Sys.Date())
   
+  site_params <- model_params %>% filter(siteID==site)
+  site_params <- list(G_init = mean(targets$gcc_90,na.rm = T),
+                     a = site_params$a[1],
+                     b = site_params$b[1],
+                     green_up = site_params$green_up[1],
+                     G_max = site_params$G_max[1],
+                     spring_date=spring_date)
   
+  tmp_forecast <- WarmModelForecast(params = site_params, GDD=site_GDD, targets=site_targs, spring_date = spring_date,cross_validation = FALSE)
+  tmp_forecast$siteID <- site
+  tmp_forecast <- select(tmp_forecast,c(siteID,date,'gcc_90'=pred_gcc_90))
+  forecast_df <- rbind(forecast_df,tmp_forecast)
+  rm(tmp_forecast,site_params,site_targs,site_GDD)
   
 }
 
+ggplot(noaa_wx,aes(x=date,y=daily_mean))+
+  geom_point()+
+  facet_wrap(~siteID)
 ```
 
 

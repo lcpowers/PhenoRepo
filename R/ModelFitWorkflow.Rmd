@@ -224,7 +224,7 @@ for(site in sites){
   print(fitPlot)
 }
 
-write.csv(params_df,"data/model/model_params.csv")
+write_csv(params_df,"data/model/model_params.csv")
 ```
 
 Plot gridsearch surface
@@ -335,9 +335,10 @@ for(site in sites){
                    spring_date=spring_date)
     
     yeari_forecast <- WarmModelForecast(params=params,
-                                        test_GDD = test_GDD,
-                                        test_targs = test_targs,
-                                        spring_date = spring_date)
+                                        GDD = test_GDD,
+                                        targets = test_targs,
+                                        spring_date = spring_date,
+                                        cross_validation = TRUE)
     
     tmp_error <- yeari_forecast %>% select(time,error)
                     
