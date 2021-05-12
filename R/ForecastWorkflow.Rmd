@@ -153,14 +153,15 @@ error_melt <- melt(error_df,id.vars = c("dayofyear","forecast_day"), value.name 
   
 MSQerror_df <- error_melt %>% 
   group_by(forecast_day,siteID) %>% # For each forecast day....
-  summarise(MSQerror = mean(deviation^2)) #...find the mean square error of the deviations (y.obs-y.pred)
+  summarise(MSQerror = mean(deviation^2),
+            MABSerror = mean(abs(deviation))) #...find the mean square error of the deviations (y.obs-y.pred)
 
 # Create simple linear regression model of errors using forecast_day as predictor variable
-error_lm <- lm(MSQerror~forecast_day+siteID,data=subset(MSQerror_df,forecast_day<=50))
+error_lm <- lm(MABSerror~forecast_day+siteID,data=subset(MSQerror_df,forecast_day<=50))
 summary(error_lm)
 
 # Add error to forecast df
-forecast_df$gcc_sd <- predict(error_lm, newdata = forecast_df)*50
+forecast_df$gcc_sd <- predict(error_lm, newdata = forecast_df)
 ```
 
 
@@ -190,7 +191,7 @@ ggplot(subset(all_gcc,time>="2020-01-01"), aes(x=time,y=gcc_90))+
   scale_x_date(date_breaks="1 year", date_labels = "%Y")+
   labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="",fill="")
 
-ggsave("Figures/forecasts.png", height = 10,width = 15,dpi=400)
+# ggsave("Figures/forecasts.png", height = 10,width = 15,dpi=400)
 ```
 
 
@@ -217,9 +218,11 @@ write_csv(submit_df,forecast_file)
 # VII. Create metadata file
 ```{r metadata}
 
+# This works
 metadata_yaml <- paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",EFI_theme,"-",Sys.Date(),"-",team_ID,".yml")
-
 create_model_metadata(forecast_file)
+
+# But this doesn't, for reasons that are perhaps a bug in the NEON function code
 write_metadata_eml(forecast_file=forecast_file,
                    metadata_yaml=metadata_yaml,
                    forecast_issue_time = Sys.Date(),
