@@ -153,11 +153,11 @@ error_melt <- melt(error_df,id.vars = c("dayofyear","forecast_day"), value.name 
   
 MSQerror_df <- error_melt %>% 
   group_by(forecast_day,siteID) %>% # For each forecast day....
-  summarise(MSQerror = mean(deviation^2),
+  summarise(MSQerror = mean(deviation^2) %>% sqrt(.),
             MABSerror = mean(abs(deviation))) #...find the mean square error of the deviations (y.obs-y.pred)
 
 # Create simple linear regression model of errors using forecast_day as predictor variable
-error_lm <- lm(MABSerror~forecast_day+siteID,data=subset(MSQerror_df,forecast_day<=50))
+error_lm <- lm(MSQerror~forecast_day+siteID,data=subset(MSQerror_df,forecast_day<=50))
 summary(error_lm)
 
 # Add error to forecast df
