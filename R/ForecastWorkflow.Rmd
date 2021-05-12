@@ -31,8 +31,8 @@ source("R/WarmModelForecast.R")
 source("R/calcGDDfun.R")
 
 team_ID = "CU_Pheno" 
-theme="phenology"
-forecast_file=paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",theme,"-",Sys.Date(),"-",team_ID,".csv")
+EFI_theme="phenology"
+forecast_file=paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",EFI_theme,"-",Sys.Date(),"-",team_ID,".csv")
 ```
 
 
@@ -69,12 +69,12 @@ neon_wx <- read_csv("data/drivers/neon/temps_allsites.csv") %>%
 
 ## Update NOAA weather data. This will take a minute or two, but shouldn't take longer
 ## When it finishes, should be a dataframe called noaa_wx in the global env
-# source("R/GetNOAAForecastData.R")
-# noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
+source("R/GetNOAAForecastData.R")
+noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
 ## Or read in most recent pull of data. Last pull of new data was 2021-05-09. 
 # IF THIS LINE (below) GIVES AN ERROR, PROBABLY NEED TO RUN line 77 FOR NEW DATA
-noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
+# noaa_wx <- read_csv(paste0("./data/drivers/noaa/noaa_temp_4cast_",Sys.Date(),".csv"))
 
 # Either way, run this
 noaa_wx <- noaa_wx %>%
@@ -183,13 +183,14 @@ ggplot(subset(all_gcc,time>="2020-01-01"), aes(x=time,y=gcc_90))+
   geom_ribbon(data = subset(all_gcc,time>="2021-05-05"),
               mapping = aes(x=time,ymin=gcc_90-gcc_sd,ymax=gcc_90+gcc_sd,color=source,fill=source),alpha=0.75)+
   facet_wrap(~siteID)+
-  theme_classic(base_size = 16)+
+  theme_classic(base_size = 18)+
+  theme(legend.text = element_text(size=20))+
   scale_color_manual(values=c("springgreen4","coral3"),labels=c("Observed","Forecasted"))+
   scale_fill_manual(values=c("springgreen4","coral3"),labels=c("Observed","Forecasted"))+
   scale_x_date(date_breaks="1 year", date_labels = "%Y")+
   labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="",fill="")
 
-ggsave("Figures/forecasts.png", height = 9,width = 14,dpi=400)
+ggsave("Figures/forecasts.png", height = 10,width = 15,dpi=400)
 ```
 
 
@@ -216,13 +217,13 @@ write_csv(submit_df,forecast_file)
 # VII. Create metadata file
 ```{r metadata}
 
-metadata_yaml <- paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",theme,"-",Sys.Date(),"-",team_ID,".yml")
+metadata_yaml <- paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",EFI_theme,"-",Sys.Date(),"-",team_ID,".yml")
 
-create_model_metadata(forecast_fn)
+create_model_metadata(forecast_file)
 write_metadata_eml(forecast_file=forecast_file,
                    metadata_yaml=metadata_yaml,
                    forecast_issue_time = Sys.Date(),
-                   forecast_iteration_id = "1")
+                   forecast_iteration_id = "2")
 
 ```
 
@@ -245,4 +246,3 @@ Extra stuff
 # AWS_DEFAULT_REGION="data"
 # AWS_S3_ENDPOINT="ecoforecast.org"
 ```
-
