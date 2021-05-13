@@ -1,0 +1,29 @@
+#####
+#See https://shorturl.at/irMQW for a guide to all the options below
+####
+team_name: CU_Pheno
+# ids are optional except for the first author, who is also the 'contact'
+team_list:
+  - individualName:
+      givenName: Casey 
+      surName: Middleton
+      id: casey.middleton@colorado.edu
+  - individualName:
+      givenName: Claire 
+      surName: Powers
+      id: claire.powers@colorado.edu
+  - individualName:
+      givenName: Josh
+      surName: Seabaugh
+      id: joshua.seabaugh@colorado.edu
+metadata:
+  forecast:
+    timestep: 1 day #time step of model
+    forecast_horizon: 35 days #number of time steps in the future
+#
+    model_description:
+      # model identifier:
+      forecast_model_id: "null"
+      name: Mechanistic model of GCC growth-decay
+      type: empirical 
+      repository: https://github.com/lcpowers/PhenoRepo
