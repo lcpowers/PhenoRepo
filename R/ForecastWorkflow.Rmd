@@ -191,7 +191,7 @@ ggplot(subset(all_gcc,time>="2020-01-01"), aes(x=time,y=gcc_90))+
   scale_x_date(date_breaks="1 year", date_labels = "%Y")+
   labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="",fill="")
 
-# ggsave("Figures/forecasts.png", height = 10,width = 15,dpi=400)
+ggsave("Figures/forecasts.png", height = 10,width = 15,dpi=400)
 ```
 
 
@@ -239,13 +239,3 @@ Sys.setenv("AWS_DEFAULT_REGION" = "data",
 aws.s3::put_object(file=forecast_file, bucket="submissions")
 ```
 
-
-Extra stuff
-
-### Need these set to submit?
-```{r submitVars}
-## Set the following  env vars: 
-# AWS_SECRET_ACCESS_KEY=""
-# AWS_DEFAULT_REGION="data"
-# AWS_S3_ENDPOINT="ecoforecast.org"
-```
