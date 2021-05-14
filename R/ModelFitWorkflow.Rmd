@@ -345,3 +345,76 @@ for(site in sites){
 write_csv(error_df,"data/model/model_errors.csv")
 ```
 
+#Plot model fits
+```{r plotdata}
+
+spring_date <- "-02-24"
+fall_date <- "-09-01"
+
+model_params <- read_csv("data/model/model_params.csv")
+sites <- unique(targets$siteID) %>% as.character()
+
+# Store model output and observed target data for each site
+model_results <- data.frame()
+
+for (site in sites){
+  
+  # Filter target data for site and warm period
+  site_targs <- targets %>% 
+    filter(siteID==site) %>% # Get site data
+    arrange(time) %>%  # make sure arranged by time
+    filter(time>=as.Date(paste0(year(time),spring_date)),
+           time<=as.Date(paste0(year(time),fall_date)))
+  
+  # Filter weather data for site and warm period
+  site_GDD <- GDD %>% 
+    filter(siteID==site) %>% # Get site data
+    arrange(date) %>%  # make sure arranged by time
+    filter(date>=as.Date(paste0(year(date),spring_date)),
+           date<=as.Date(paste0(year(date),fall_date)),
+           date<=max(site_targs$time))
+
+  # Remove 2017 for GRSM 
+  if (site == "GRSM"){
+    site_targs <- filter(site_targs, time >= as.Date("01-01-18","%m-%d-%y"))
+    site_GDD <- filter(site_GDD, date >= as.Date("01-01-18","%m-%d-%y"))
+  }
+  
+  # Pull site params
+  site_params <- model_params %>% filter(siteID == site)
+  
+  site_results <- WarmModel(site_GDD,site_params$G_init,site_params$a,site_params$b,site_params$green_up,site_params$G_max,spring_date)
+  
+  site_results$siteID = site
+  site_results$source = "model"
+  
+  site_targ_df <- site_targs[1:3]
+  site_targ_df <- site_targ_df[,-2]
+  site_targ_df$siteID <- site_targs$siteID
+  site_targ_df$source <- "target"
+  site_targ_df <- site_targ_df %>% rename(date = time, G = gcc_90)
+  
+  site_results <- site_results[,-3]
+  site_results <- rbind(site_targ_df,site_results)
+  
+  model_results <- rbind(model_results, site_results)
+}
+
+#model_results$source <- factor(model_results$source, levels=unique(model_results$source))
+
+png(file = "Figures/model_fits.png", width = 1000, height = 700)
+ggplot(model_results,aes(x=date,y=G))+
+  geom_point(aes(color=source))+
+  facet_wrap(~siteID)+
+  theme_classic(base_size = 16)+
+  scale_color_manual(values=c("coral2","springgreen4"),labels=c("Predicted","Observed"))+
+  labs(x="Year",y="Green Chromatic Coordinate (GCC)",color="")
+while (!is.null(dev.list()))  dev.off()
+
+ggplot(site_results,aes(x=date, y=G))+
+  #geom_point(site_results,aes(x=date, y=G))+
+  geom_point(aes(color=source))
+
+
+
+```

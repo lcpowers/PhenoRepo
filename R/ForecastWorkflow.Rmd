@@ -32,7 +32,7 @@ source("R/calcGDDfun.R")
 
 team_ID = "CU_Pheno" 
 EFI_theme="phenology"
-forecast_file=paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",EFI_theme,"-",Sys.Date(),"-",team_ID,".csv")
+forecast_file=paste0("data/forecasts/",EFI_theme,"-",Sys.Date(),"-",team_ID,".csv")
 ```
 
 
