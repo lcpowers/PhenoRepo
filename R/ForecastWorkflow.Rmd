@@ -5,7 +5,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(root.dir="/home/claire/Git/PhenoRepo/")
+knitr::opts_chunk$set(root.dir="C:/Users/17313/Documents/NEON/PhenoRepo")
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
@@ -113,7 +113,8 @@ spring_date = str_sub(string = Sys.Date(),start = 5,end = 10)
 
 for(site in sites){
   
-  site_targs <- targets %>% filter(siteID==site) %>% filter(time>=(Sys.Date()-7))
+  # Initialize at average of last 3 days
+  site_targs <- targets %>% filter(siteID==site) %>% filter(time>=(Sys.Date()-3))
   site_GDD <- GDD %>% filter(siteID==site&date>=Sys.Date())
   
   site_params <- model_params %>% filter(siteID==site)
@@ -153,7 +154,7 @@ error_melt <- melt(error_df,id.vars = c("dayofyear","forecast_day"), value.name 
   
 MSQerror_df <- error_melt %>% 
   group_by(forecast_day,siteID) %>% # For each forecast day....
-  summarise(MSQerror = mean(deviation^2) %>% sqrt(.),
+  summarise(MSQerror = mean(deviation^2 %>% sqrt(.)),
             MABSerror = mean(abs(deviation))) #...find the mean square error of the deviations (y.obs-y.pred)
 
 # Create simple linear regression model of errors using forecast_day as predictor variable
