@@ -220,7 +220,7 @@ write_csv(submit_df,forecast_file)
 ```{r metadata}
 
 # This works
-metadata_yaml <- paste0("~/Desktop/CurrentProjects/TeamRotation/PhenoRepo/data/forecasts/",EFI_theme,"-",Sys.Date(),"-",team_ID,".yml")
+metadata_yaml <- paste0("data/forecasts/",EFI_theme,"-",Sys.Date(),"-",team_ID,".yml")
 create_model_metadata(forecast_file)
 
 # But this doesn't, for reasons that are perhaps a bug in the NEON function code

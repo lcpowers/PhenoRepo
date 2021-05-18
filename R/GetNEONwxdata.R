@@ -8,7 +8,7 @@ library(neonUtilities)
 
 targets <- read_csv("data/pheno/phenology-targets.csv.gz")
 sites <- unique(targets$siteID)
-dir.create("data/drivers/neon/")
+#dir.create("data/drivers/neon/")
 
 for(site in sites){
   
@@ -18,9 +18,9 @@ for(site in sites){
                         package="basic",
                         check.size=F)
 
-  # Get the 
+  # Get the temp data
   temp_df <- Temp$SAAT_30min
-  dir.create(paste0("data/drivers/neon/",site))
+  #dir.create(paste0("data/drivers/neon/",site))
   write_csv(temp_df,paste0("data/drivers/neon/",site,"/temp.csv"))
   write_csv(as.data.frame(Temp$variables_00002),
             paste0("data/drivers/neon/",site,"/temp_vars.csv"))

@@ -5,7 +5,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(root.dir="/home/claire/Git/PhenoRepo/")
+knitr::opts_chunk$set(root.dir="C:/Users/17313/Documents/NEON/PhenoRepo")
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
