@@ -1,5 +1,5 @@
 #PhenoRepo
-Repository for Team Rotation Project: NEON Ecological Forecasting Phenoloy Challenge
+Repository for Team Rotation Project: NEON Ecological Forecasting Phenology Challenge
 
 # Project Overview
 This repository hosts all project files for team CUPheno's participation in the NEON phenology forecasting challenge. The challenge is hosted by the National Ecological Observatory Network, which provides color channel data and raw images for eight decidious forest observation sites in the eastern United States. The challenge requires participants to forecast the daily green-chromatic coordinate (GCC) of each site at noon for 35 days into the future. The spring 2021 challenge focused specifically on spring green-up across sites. 
